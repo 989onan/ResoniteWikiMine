@@ -74,7 +74,7 @@ public static class FieldFormatter
         {
             var field = list[i];
             var desc = descriptions?.GetValueOrDefault(field.Name);
-            var (fieldType, advanced) = FormatFieldType(field.Type);
+            var (fieldType, advanced) = FormatFieldType(field.Type, type);
 
             sb.Append($"|{field.Name}");
             sb.Append($"|{fieldType}");
@@ -107,17 +107,17 @@ public static class FieldFormatter
         return list;
     }
 
-    public static (string typeColumn, bool advanced) FormatFieldType(Type type)
+    public static (string typeColumn, bool advanced) FormatFieldType(Type type, Type? containingType = null)
     {
         if (UnwrapSilentType(type) is { } contained)
         {
             // We don't need to use Template:RootFieldType here.
             // If we can let Template:Table ComponentFields handle it, we pass the name DIRECTLY.
             // Else we use advanced mode but still format the type manually.
-            if (IsNonDefaultNamespace(contained) || contained.IsGenericType || contained.IsGenericTypeParameter)
+            if (IsNonDefaultNamespace(contained) || contained.IsGenericType || contained.IsGenericTypeParameter || IsNestedType(contained, containingType))
             {
                 // We bold ourselves, since nobody else will.
-                return ($"'''{MakeDisplayType(contained)}'''", true);
+                return ($"'''{MakeDisplayType(contained, containingType)}'''", true);
             }
 
             return (SimpleTypeName(contained), false);
@@ -128,10 +128,15 @@ public static class FieldFormatter
         var genericParams = "";
         if (type.IsGenericType)
         {
-            genericParams = "|" + string.Join(", ", type.GenericTypeArguments.Select(MakeDisplayType));
+            genericParams = "|" + string.Join(", ", type.GenericTypeArguments.Select(x => MakeDisplayType(x, containingType)));
         }
 
         return ($"{{{{RootFieldType|{SimpleTypeName(rootType)}{genericParams}}}}}", true);
+    }
+
+    private static bool IsNestedType(Type type, Type? containingType)
+    {
+        return type.IsNested && type.DeclaringType == containingType;
     }
 
     private static Type? UnwrapSilentType(Type type)
@@ -164,13 +169,18 @@ public static class FieldFormatter
         return GetTypeNamespace(type) != DefaultNamespace;
     }
 
-    private static string MakeDisplayType(Type type)
+    private static string MakeDisplayType(Type type, Type? containingType)
     {
         if (type.IsGenericParameter)
             return type.Name;
 
         var sb = new StringBuilder();
-        sb.Append($"[[{GetTypeNamespace(type)}{SimpleTypeName(type)}|{SimpleTypeName(type)}]]");
+        // If this is a nested type of the type we're creating the page for,
+        // we generate an internal anchor link instead.
+        var typePage = IsNestedType(type, containingType)
+            ? $"#{SimpleTypeName(type)}"
+            : $"{GetTypeNamespace(type)}{SimpleTypeName(type)}";
+        sb.Append($"[[{typePage}|{SimpleTypeName(type)}]]");
 
         if (type.IsConstructedGenericType)
         {
@@ -183,7 +193,7 @@ public static class FieldFormatter
                     sb.Append(", ");
 
                 first = false;
-                sb.Append(MakeDisplayType(typeArg));
+                sb.Append(MakeDisplayType(typeArg, containingType));
             }
 
             sb.Append("&gt;");

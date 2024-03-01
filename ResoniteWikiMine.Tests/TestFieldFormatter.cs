@@ -26,4 +26,18 @@ public sealed class TestFieldFormatter
             Assert.That(advanced, Is.EqualTo(expectedAdvanced));
         });
     }
+
+    [Test]
+    [TestCase(typeof(SyncRef<InteractionHandlerPermissions.ToolRule>), typeof(InteractionHandlerPermissions), "'''[[#ToolRule|ToolRule]]'''", true)]
+    [TestCase(typeof(Sync<VolumeUnlitMaterial.DisplayMode>), typeof(VolumeUnlitMaterial), "'''[[#DisplayMode|DisplayMode]]'''", true)]
+    public void TestFormatFieldTypeContaining(Type type, Type containing, string expected, bool expectedAdvanced)
+    {
+        var (text, advanced) = FieldFormatter.FormatFieldType(type, containing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(text, Is.EqualTo(expected));
+            Assert.That(advanced, Is.EqualTo(expectedAdvanced));
+        });
+    }
 }
