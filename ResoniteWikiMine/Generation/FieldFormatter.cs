@@ -22,9 +22,7 @@ public static class FieldFormatter
     private static readonly HashSet<Type> SilentFieldTypes =
     [
         typeof(Sync<>),
-        typeof(SyncRef<>),
-        typeof(AssetRef<>),
-        typeof(SyncDelegate<>)
+        typeof(SyncRef<>)
     ];
 
     private static readonly Dictionary<Type, string> SpecialTypeNames = new()
@@ -102,8 +100,10 @@ public static class FieldFormatter
             // Else we use advanced mode but still format the type manually.
             if (IsNonDefaultNamespace(contained) || contained.IsGenericType)
             {
-                return (MakeDisplayType(contained), true);
+                // We bold ourselves, since nobody else will.
+                return ($"'''{MakeDisplayType(contained)}'''", true);
             }
+
             return (SimpleTypeName(contained), false);
         }
 
