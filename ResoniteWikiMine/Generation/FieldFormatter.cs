@@ -50,6 +50,25 @@ public static class FieldFormatter
         var sb = new StringBuilder();
         sb.AppendLine("{{Table ComponentFields");
 
+        MakeFieldsTemplateCore(sb, type, descriptions);
+
+        sb.Append("}}");
+        return sb.ToString();
+    }
+
+    internal static string MakeTypeFieldsTemplate(Type type, Dictionary<string, string>? descriptions = null)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("{{Table TypeFields");
+
+        MakeFieldsTemplateCore(sb, type, descriptions);
+
+        sb.Append("}}");
+        return sb.ToString();
+    }
+
+    private static void MakeFieldsTemplateCore(StringBuilder sb, Type type, Dictionary<string, string>? descriptions = null)
+    {
         var list = GetComponentFields(type);
         for (var i = 0; i < list.Count; i++)
         {
@@ -65,9 +84,6 @@ public static class FieldFormatter
 
             sb.AppendLine(field.Description);
         }
-
-        sb.Append("}}");
-        return sb.ToString();
     }
 
     private static List<ComponentFieldsEntry> GetComponentFields(Type type)
