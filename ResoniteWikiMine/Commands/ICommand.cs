@@ -1,8 +1,10 @@
 ﻿using System.Net;
+using JetBrains.Annotations;
 using Microsoft.Data.Sqlite;
 
 namespace ResoniteWikiMine.Commands;
 
+[UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
 public interface ICommand
 {
     Task<int> Run(WorkContext context, string[] args);

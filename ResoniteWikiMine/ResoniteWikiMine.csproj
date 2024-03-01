@@ -14,6 +14,7 @@
         <PackageReference Include="Microsoft.Data.Sqlite"/>
         <PackageReference Include="DiffPlex"/>
         <PackageReference Include="CXuesong.MW.MwParserFromScratch"/>
+        <PackageReference Include="JetBrains.Annotations"  />
     </ItemGroup>
 
     <Import Project="../FrooxInclude.props"/>
