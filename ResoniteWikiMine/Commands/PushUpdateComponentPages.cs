@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
 using Dapper;
 using ResoniteWikiMine.MediaWiki;
 
@@ -89,17 +90,17 @@ public sealed class PushUpdateComponentPages : ICommand
         var resp = await context.HttpClient.PostAsync(Constants.WikiApiUrl, requestBody);
         resp.EnsureSuccessStatusCode();
 
-        var editResponse = await resp.Content.ReadFromJsonAsync<EditResponseWrap>();
-        Console.WriteLine($"Status: {editResponse!.Edit}");
+        var response = await resp.Content.ReadAsStringAsync();
+        Console.WriteLine($"Response: {response}");
 
-        if (editResponse.Edit.Result == "Success")
+        if (JsonSerializer.Deserialize<EditResponseWrap>(response) is { edit: { } edit })
         {
             context.DbConnection.Execute(
                 "UPDATE page_content SET revision_id = @NewRevision, content = @NewContent WHERE id = @Page",
                 new
                 {
                     Page = page,
-                    NewRevision = editResponse.Edit.newrevid,
+                    NewRevision = edit.newrevid,
                     NewContent = newContent
                 });
 
@@ -111,7 +112,7 @@ public sealed class PushUpdateComponentPages : ICommand
 
     private sealed record TokenResponse(Dictionary<string, string> Tokens);
 
-    private sealed record EditResponseWrap(EditResponse Edit);
+    private sealed record EditResponseWrap(EditResponse edit);
 
-    private sealed record EditResponse(string Result, int newrevid);
+    private sealed record EditResponse(string result, int newrevid);
 }
