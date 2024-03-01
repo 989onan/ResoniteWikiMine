@@ -9,8 +9,14 @@ public sealed class CreateTypeFields : ICommand
     {
         FrooxLoader.InitializeFrooxWorker();
 
-        var type = WorkerInitializer.Workers.Single(x => x.Name == args[0]);
-        Console.WriteLine(FieldFormatter.MakeTypeFieldsTemplate(type));
+        foreach (var type in WorkerInitializer.Workers.Where(x => x.Name == args[0]))
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"{type}");
+            Console.ResetColor();
+
+            Console.WriteLine(FieldFormatter.MakeTypeFieldsTemplate(type));
+        }
         return 0;
     }
 }
