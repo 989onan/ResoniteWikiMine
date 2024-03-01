@@ -98,7 +98,7 @@ public static class FieldFormatter
             // We don't need to use Template:RootFieldType here.
             // If we can let Template:Table ComponentFields handle it, we pass the name DIRECTLY.
             // Else we use advanced mode but still format the type manually.
-            if (IsNonDefaultNamespace(contained) || contained.IsGenericType)
+            if (IsNonDefaultNamespace(contained) || contained.IsGenericType || contained.IsGenericTypeParameter)
             {
                 // We bold ourselves, since nobody else will.
                 return ($"'''{MakeDisplayType(contained)}'''", true);
@@ -150,6 +150,9 @@ public static class FieldFormatter
 
     private static string MakeDisplayType(Type type)
     {
+        if (type.IsGenericParameter)
+            return type.Name;
+
         var sb = new StringBuilder();
         sb.Append($"[[{GetTypeNamespace(type)}{SimpleTypeName(type)}|{SimpleTypeName(type)}]]");
 
