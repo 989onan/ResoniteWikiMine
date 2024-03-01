@@ -1,4 +1,6 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Net;
+using Dapper;
+using Microsoft.Data.Sqlite;
 using ResoniteWikiMine;
 using ResoniteWikiMine.Commands;
 
@@ -17,12 +19,41 @@ if (commandType == null)
     return 1;
 }
 
-using var httpClient = new HttpClient();
+var cookieContainer = new CookieContainer();
+
+using var httpClient = new HttpClient(new SocketsHttpHandler { CookieContainer = cookieContainer });
 httpClient.DefaultRequestHeaders.Add("User-Agent", Constants.UserAgent);
+
 using var dbConnection = new SqliteConnection($"Data Source={Constants.DbName}");
 dbConnection.Open();
 
-var context = new WorkContext(httpClient, dbConnection);
+using var authDbConnection = new SqliteConnection($"Data Source={Constants.AuthDbName}");
+authDbConnection.Open();
+
+var workContext = new WorkContext(cookieContainer, httpClient, dbConnection, authDbConnection);
+
+LoadCookiesFromDb(workContext);
 
 var command = (ICommand)Activator.CreateInstance(commandType)!;
-return await command.Run(context, args[1..]);
+return await command.Run(workContext, args[1..]);
+
+void LoadCookiesFromDb(WorkContext context)
+{
+    using var tx = context.AuthDbConnection.BeginTransaction();
+    var hasCookies = context.AuthDbConnection.QuerySingle<int>(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='cookies'");
+
+    if (hasCookies == 0)
+        return;
+
+    var cookies = context.AuthDbConnection.Query<(string, string, string, string)>("""
+        SELECT name, path, domain, value
+        FROM cookies
+        """);
+
+    foreach (var (name, path, domain, value) in cookies)
+    {
+        var cookie = new Cookie(name, value, path, domain);
+        context.CookieContainer.Add(cookie);
+    }
+}

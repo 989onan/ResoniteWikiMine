@@ -13,7 +13,7 @@ public class ImportComponentPageList : ICommand
         await using var transaction = await db.BeginTransactionAsync();
 
         const string url = Constants.WikiApiUrl +
-                           "?action=query&generator=categorymembers&gcmtitle=Category:Components&format=json&prop=revisions&rvslots=main&rvprop=content";
+                           "?action=query&generator=categorymembers&gcmtitle=Category:Components&format=json&prop=revisions&rvslots=main&rvprop=content|ids";
 
         await foreach (var response in MediawikiApi.MakeContinueEnumerable<CategoryMembersResponse>(
                            context.HttpClient, url))
@@ -28,13 +28,14 @@ public class ImportComponentPageList : ICommand
                     page);
 
                 await db.ExecuteAsync(
-                    "INSERT OR REPLACE INTO page_content (id, slot, model, format, content) VALUES (@PageId, 'main', @ContentModel, @ContentFormat, @Content)",
+                    "INSERT OR REPLACE INTO page_content (id, slot, model, format, content, revision_id) VALUES (@PageId, 'main', @ContentModel, @ContentFormat, @Content, @RevisionId)",
                     new
                     {
                         page.PageId,
                         slot.ContentModel,
                         slot.ContentFormat,
-                        slot.Content
+                        slot.Content,
+                        revision.RevisionId
                     });
             }
 
@@ -57,6 +58,8 @@ public class ImportComponentPageList : ICommand
         CategoryMembersRevision[] Revisions);
 
     private sealed record CategoryMembersRevision(
+        [property: JsonPropertyName("revid")] int RevisionId,
+        [property: JsonPropertyName("parentid")] int ParentId,
         Dictionary<string, CategoryMembersRevisionSlot> Slots);
 
     private sealed record CategoryMembersRevisionSlot(

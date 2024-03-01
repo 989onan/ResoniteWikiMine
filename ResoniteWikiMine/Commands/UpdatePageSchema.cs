@@ -9,6 +9,8 @@ public class UpdatePageSchema : ICommand
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
 
+        db.Execute("DROP VIEW IF EXISTS wiki_component_update_report_view");
+        db.Execute("DROP TABLE IF EXISTS wiki_component_update_report");
         await db.ExecuteAsync("DROP VIEW IF EXISTS wiki_component_report_view");
         await db.ExecuteAsync("DROP TABLE IF EXISTS wiki_component_report");
         await db.ExecuteAsync("DROP TABLE IF EXISTS page_content");
@@ -28,6 +30,7 @@ public class UpdatePageSchema : ICommand
                 model TEXT NOT NULL,
                 format TEXT NOT NULL,
                 content TEXT NOT NULL,
+                revision_id INT NOT NULL,
                 PRIMARY KEY (id, slot)
             )
             """);
