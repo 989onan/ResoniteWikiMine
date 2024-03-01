@@ -46,8 +46,10 @@ public sealed class PushUpdateComponentPages : ICommand
             Console.WriteLine(")");
             Console.ResetColor();
 
-            await UpdatePage(context, page, baseRevision, csrfToken, text, "Automated: update component fields");
+            await UpdatePage(context, name, page, baseRevision, csrfToken, text, "Automated: update component fields");
         }
+
+        transaction.Commit();
 
         return 0;
     }
@@ -60,8 +62,8 @@ public sealed class PushUpdateComponentPages : ICommand
         return response!.Query.Tokens["csrftoken"];
     }
 
-    private static async Task UpdatePage(
-        WorkContext context,
+    private static async Task UpdatePage(WorkContext context,
+        string name,
         int page,
         int baseRevision,
         string csrfToken,
@@ -78,6 +80,7 @@ public sealed class PushUpdateComponentPages : ICommand
             new("bot", "true"),
             new("contentformat", "text/x-wiki"),
             new("contentmodel", "wikitext"),
+            new("watchlist", "nochange"),
             new("text", newContent),
             new("summary", summary),
         ]);
@@ -86,15 +89,29 @@ public sealed class PushUpdateComponentPages : ICommand
         var resp = await context.HttpClient.PostAsync(Constants.WikiApiUrl, requestBody);
         resp.EnsureSuccessStatusCode();
 
-        Console.WriteLine(await resp.Content.ReadAsStringAsync());
+        var editResponse = await resp.Content.ReadFromJsonAsync<EditResponseWrap>();
+        Console.WriteLine($"Status: {editResponse!.Edit}");
 
-        // var editResponse = await resp.Content.ReadFromJsonAsync<EditResponseWrap>();
-        // Console.Write($"Status: {editResponse!.Edit}");
+        if (editResponse.Edit.Result == "Success")
+        {
+            context.DbConnection.Execute(
+                "UPDATE page_content SET revision_id = @NewRevision, content = @NewContent WHERE id = @Page",
+                new
+                {
+                    Page = page,
+                    NewRevision = editResponse.Edit.newrevid,
+                    NewContent = newContent
+                });
+
+            context.DbConnection.Execute(
+                "DELETE FROM wiki_component_update_report where name = @Name",
+                new { Name = name });
+        }
     }
 
     private sealed record TokenResponse(Dictionary<string, string> Tokens);
 
     private sealed record EditResponseWrap(EditResponse Edit);
 
-    private sealed record EditResponse(string Result);
+    private sealed record EditResponse(string Result, int newrevid);
 }
