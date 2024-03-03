@@ -19,7 +19,7 @@ public sealed class PushUpdateComponentPages : ICommand
         await using var transaction = await db.BeginTransactionAsync();
 
         var csrfToken = await GetCsrfToken(context.HttpClient);
-        Console.WriteLine(csrfToken);
+        // Console.WriteLine(csrfToken);
 
         var toUpdate = db.Query<(int page, string name, string pageTitle, string newWikiText, int baseRevision, UpdateComponentPages.PageChanges changes)>("""
             SELECT
