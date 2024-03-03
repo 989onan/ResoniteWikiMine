@@ -11,7 +11,7 @@ namespace ResoniteWikiMine.Generation;
 public static class FieldFormatter
 {
     // Fields that should be skipped.
-    private static readonly string[] SkipFields = ["Enabled", "UpdateOrder", "persistent"];
+    private static readonly string[] SkipComponentFields = ["Enabled", "UpdateOrder", "persistent"];
 
     // These "wrapping" field types are "invisible" with Template:RootFieldType.
     // This means we can directly have Table ComponentFields handle them,
@@ -50,7 +50,7 @@ public static class FieldFormatter
         var sb = new StringBuilder();
         sb.AppendLine("{{Table ComponentFields");
 
-        MakeFieldsTemplateCore(sb, type, descriptions);
+        MakeFieldsTemplateCore(sb, type, SkipComponentFields, descriptions);
 
         sb.Append("}}");
         return sb.ToString();
@@ -61,15 +61,15 @@ public static class FieldFormatter
         var sb = new StringBuilder();
         sb.AppendLine("{{Table TypeFields");
 
-        MakeFieldsTemplateCore(sb, type, descriptions);
+        MakeFieldsTemplateCore(sb, type, Array.Empty<string>(), descriptions);
 
         sb.Append("}}");
         return sb.ToString();
     }
 
-    private static void MakeFieldsTemplateCore(StringBuilder sb, Type type, Dictionary<string, string>? descriptions = null)
+    private static void MakeFieldsTemplateCore(StringBuilder sb, Type type, string[] skipFields, Dictionary<string, string>? descriptions = null)
     {
-        var list = GetComponentFields(type);
+        var list = GetTypeFields(type, skipFields);
         for (var i = 0; i < list.Count; i++)
         {
             var field = list[i];
@@ -86,22 +86,22 @@ public static class FieldFormatter
         }
     }
 
-    private static List<ComponentFieldsEntry> GetComponentFields(Type type)
+    private static List<TypeFieldsEntry> GetTypeFields(Type type, string[] skipFields)
     {
         var initInfo = (WorkerInitInfo)typeof(WorkerInitializer)
             .GetMethod("GetInitInfo", BindingFlags.Static | BindingFlags.NonPublic, [typeof(Type)])!
             .Invoke(null, [type])!;
 
-        var list = new List<ComponentFieldsEntry>();
+        var list = new List<TypeFieldsEntry>();
 
         for (var i = 0; i < initInfo.syncMemberFields.Length; i++)
         {
             var field = initInfo.syncMemberFields[i];
             var fieldName = initInfo.syncMemberNames[i];
-            if (Array.IndexOf(SkipFields, fieldName) != -1)
+            if (Array.IndexOf(skipFields, fieldName) != -1)
                 continue;
 
-            list.Add(new ComponentFieldsEntry(fieldName, field.FieldType));
+            list.Add(new TypeFieldsEntry(fieldName, field.FieldType));
         }
 
         return list;
@@ -207,7 +207,7 @@ public static class FieldFormatter
         return SpecialTypeNames.TryGetValue(type, out var special) ? special : type.Name.Capitalize();
     }
 
-    private sealed record ComponentFieldsEntry(
+    private sealed record TypeFieldsEntry(
         string Name,
         Type Type,
         string? Description = null);
