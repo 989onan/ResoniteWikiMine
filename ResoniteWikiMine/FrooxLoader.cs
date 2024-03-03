@@ -6,6 +6,7 @@ namespace ResoniteWikiMine;
 public static class FrooxLoader
 {
     private static bool _isFrooxWorkerInitialized;
+    public static readonly List<Assembly> FrooxAssemblies = [];
 
     public static void InitializeFrooxWorker()
     {
@@ -24,9 +25,9 @@ public static class FrooxLoader
 
     private static void PreloadFrooxAssemblies()
     {
-        Assembly.Load("FrooxEngine");
-        Assembly.Load("ProtoFluxBindings");
-        Assembly.Load("ProtoFlux.Nodes.FrooxEngine");
+        FrooxAssemblies.Add(Assembly.Load("FrooxEngine"));
+        FrooxAssemblies.Add(Assembly.Load("ProtoFluxBindings"));
+        FrooxAssemblies.Add(Assembly.Load("ProtoFlux.Nodes.FrooxEngine"));
     }
 
     private static List<Type> GetAllFrooxTypes()
