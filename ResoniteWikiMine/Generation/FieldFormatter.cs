@@ -56,25 +56,33 @@ public static class FieldFormatter
         return sb.ToString();
     }
 
-    internal static string MakeTypeFieldsTemplate(Type type, Dictionary<string, string>? descriptions = null)
+    internal static string MakeTypeFieldsTemplate(
+        Type type,
+        Dictionary<string, string>? descriptions = null,
+        Type? containingType = null)
     {
         var sb = new StringBuilder();
         sb.Append("{{Table TypeFields\n");
 
-        MakeFieldsTemplateCore(sb, type, Array.Empty<string>(), descriptions);
+        MakeFieldsTemplateCore(sb, type, Array.Empty<string>(), descriptions, containingType);
 
         sb.Append("}}");
         return sb.ToString();
     }
 
-    private static void MakeFieldsTemplateCore(StringBuilder sb, Type type, string[] skipFields, Dictionary<string, string>? descriptions = null)
+    private static void MakeFieldsTemplateCore(
+        StringBuilder sb,
+        Type type,
+        string[] skipFields,
+        Dictionary<string, string>? descriptions = null,
+        Type? containingType = null)
     {
         var list = EnumerateFilteredSyncFields(type, skipFields).ToArray();
         for (var i = 0; i < list.Length; i++)
         {
             var field = list[i];
             var desc = GetDescription(field, descriptions);
-            var (fieldType, advanced) = FormatFieldType(field.Type, type);
+            var (fieldType, advanced) = FormatFieldType(field.Type, containingType ?? type);
 
             sb.Append($"|{field.Name}");
             sb.Append($"|{fieldType}");

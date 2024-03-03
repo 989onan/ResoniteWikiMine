@@ -9,14 +9,31 @@ public sealed class CreateTypeFields : ICommand
     {
         FrooxLoader.InitializeFrooxWorker();
 
-        foreach (var type in WorkerInitializer.Workers.Where(x => x.Name == args[0]))
+        Type? containing = null;
+        for (var i = 0; i < args.Length; i++)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"{type}");
-            Console.ResetColor();
+            switch (args[i])
+            {
+                case "--containing":
+                    var containingName = args[++i];
+                    containing = WorkerInitializer.Workers.FirstOrDefault(x => x.Name == containingName);
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"Nested container: {containing}");
+                    Console.ResetColor();
+                    break;
+                default:
+                    foreach (var type in WorkerInitializer.Workers.Where(x => x.Name == args[i]))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine($"{type}");
+                        Console.ResetColor();
 
-            Console.WriteLine(FieldFormatter.MakeTypeFieldsTemplate(type));
+                        Console.WriteLine(FieldFormatter.MakeTypeFieldsTemplate(type, containingType: containing));
+                    }
+                    break;
+            }
         }
+
         return 0;
     }
 }
