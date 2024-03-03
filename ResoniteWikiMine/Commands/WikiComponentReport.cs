@@ -16,7 +16,21 @@ public sealed partial class WikiComponentReport : ICommand
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
 
-        await db.ExecuteAsync("""
+        if (RunCoreTransacted(context, args))
+        {
+            await transaction.CommitAsync();
+
+            return 0;
+        }
+
+        return 1;
+    }
+
+    public static bool RunCoreTransacted(WorkContext context, string[] args)
+    {
+        var db = context.DbConnection;
+
+        db.Execute("""
             DROP TABLE IF EXISTS wiki_component_update_report;
             DROP VIEW IF EXISTS wiki_component_report_view;
             DROP TABLE IF EXISTS wiki_component_report;
@@ -49,7 +63,7 @@ public sealed partial class WikiComponentReport : ICommand
             // Console.WriteLine(component);
             var match = MatchWikiPage(component.Type, db, typeNamesInv);
 
-            await db.ExecuteAsync(
+            db.Execute(
                 "INSERT OR REPLACE INTO wiki_component_report VALUES (@Name, @Type, @Category, @Page, @MatchType)", new
                 {
                     component.Type.Name,
@@ -60,9 +74,7 @@ public sealed partial class WikiComponentReport : ICommand
                 });
         }
 
-        await transaction.CommitAsync();
-
-        return 0;
+        return true;
     }
 
     private static (int, MatchType)? MatchWikiPage(

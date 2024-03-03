@@ -65,7 +65,7 @@ public sealed class CreateComponentPages : ICommand
         return sb.ToString();
     }
 
-    private static List<string> GetComponentCategory(Type type)
+    public static List<string> GetComponentCategory(Type type)
     {
         var attribute = type.GetCustomAttribute<CategoryAttribute>();
         if (attribute == null)

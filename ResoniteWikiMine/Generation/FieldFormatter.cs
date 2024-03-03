@@ -69,8 +69,8 @@ public static class FieldFormatter
 
     private static void MakeFieldsTemplateCore(StringBuilder sb, Type type, string[] skipFields, Dictionary<string, string>? descriptions = null)
     {
-        var list = GetTypeFields(type, skipFields);
-        for (var i = 0; i < list.Count; i++)
+        var list = EnumerateFilteredSyncFields(type, skipFields).ToArray();
+        for (var i = 0; i < list.Length; i++)
         {
             var field = list[i];
             var desc = descriptions?.GetValueOrDefault(field.Name);
@@ -86,25 +86,26 @@ public static class FieldFormatter
         }
     }
 
-    private static List<TypeFieldsEntry> GetTypeFields(Type type, string[] skipFields)
+    private static IEnumerable<TypeFieldsEntry> EnumerateFilteredSyncFields(Type type, string[] skipFields)
+    {
+        return EnumerateSyncFields(type)
+            .Where(tuple => Array.IndexOf(skipFields, tuple.Name) == -1)
+            .Select(tuple => new TypeFieldsEntry(tuple.Name, tuple.Type));
+    }
+
+    public static IEnumerable<TypeFieldsEntry> EnumerateSyncFields(Type type)
     {
         var initInfo = (WorkerInitInfo)typeof(WorkerInitializer)
             .GetMethod("GetInitInfo", BindingFlags.Static | BindingFlags.NonPublic, [typeof(Type)])!
             .Invoke(null, [type])!;
 
-        var list = new List<TypeFieldsEntry>();
-
         for (var i = 0; i < initInfo.syncMemberFields.Length; i++)
         {
             var field = initInfo.syncMemberFields[i];
             var fieldName = initInfo.syncMemberNames[i];
-            if (Array.IndexOf(skipFields, fieldName) != -1)
-                continue;
 
-            list.Add(new TypeFieldsEntry(fieldName, field.FieldType));
+            yield return new TypeFieldsEntry(fieldName, field.FieldType);
         }
-
-        return list;
     }
 
     public static (string typeColumn, bool advanced) FormatFieldType(Type type, Type? containingType = null)
@@ -207,7 +208,7 @@ public static class FieldFormatter
         return SpecialTypeNames.TryGetValue(type, out var special) ? special : type.Name.Capitalize();
     }
 
-    private sealed record TypeFieldsEntry(
+    public sealed record TypeFieldsEntry(
         string Name,
         Type Type,
         string? Description = null);
