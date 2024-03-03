@@ -12,9 +12,13 @@ public static class FrooxLoader
         if (_isFrooxWorkerInitialized)
             return;
 
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("Loading Froox");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
         PreloadFrooxAssemblies();
 
         WorkerInitializer.Initialize(GetAllFrooxTypes(), true);
+        Console.ResetColor();
         _isFrooxWorkerInitialized = false;
     }
 
