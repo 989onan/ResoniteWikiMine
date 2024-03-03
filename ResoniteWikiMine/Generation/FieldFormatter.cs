@@ -41,7 +41,7 @@ public static class FieldFormatter
     private static readonly (Type, string)[] TypeNamespaces =
     [
         // Materials aren't in a namespace, for some reason.
-        (typeof(IMaterialBaseAsset), ""),
+        (typeof(MaterialProvider), ""),
         (typeof(Component), "Component:"),
     ];
 
