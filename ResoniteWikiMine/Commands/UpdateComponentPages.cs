@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using FrooxEngine;
 using MwParserFromScratch;
+using MwParserFromScratch.Nodes;
 using ResoniteWikiMine.Generation;
 using ResoniteWikiMine.MediaWiki;
 using ResoniteWikiMine.Utility;
@@ -9,6 +10,11 @@ namespace ResoniteWikiMine.Commands;
 
 public sealed class UpdateComponentPages : ICommand
 {
+    private static readonly (string frooxCategory, string wikiCategory)[] CategoryDefinitions = [
+        ("", "Components"),
+        ("Assets/Materials", "Materials")
+    ];
+
     public async Task<int> Run(WorkContext context, string[] args)
     {
         var db = context.DbConnection;
@@ -180,54 +186,70 @@ public sealed class UpdateComponentPages : ICommand
             true,
             niceName);
 
+        CategoryHelper.EnsureCategoryState(
+            categories,
+            "Category:Materials{{#translation:}}",
+            IsInCategory(type, "Assets/Materials"),
+            niceName);
+
         // Remove categories without translation markers that shouldn't be used.
-        CategoryHelper.EnsureCategoryState(
-            categories,
-            "Category:Components",
-            false,
-            niceName);
-
-        CategoryHelper.EnsureCategoryState(
-            categories,
-            "Category:Components With Nested Types",
-            false,
-            niceName);
-
-        CategoryHelper.EnsureCategoryState(
-            categories,
-            "Category:Components With Nested Enums",
-            false,
-            niceName);
+        CategoryHelper.EnsureCategoryState(categories, "Category:Components", false);
+        CategoryHelper.EnsureCategoryState(categories, "Category:Materials", false);
+        CategoryHelper.EnsureCategoryState(categories, "Category:Components With Nested Types", false);
+        CategoryHelper.EnsureCategoryState(categories, "Category:Components With Nested Enums", false);
 
         // Synchronize category categories (Components:Assets and so on)
-
-        var categoryCategory = categories.Categories
-            .SingleOrDefault(x => x.Target.ToString().StartsWith("Category:Components:"));
-
-        var typeCategory = CreateComponentPages.GetComponentCategory(type);
-        if (typeCategory.Count > 1)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("Uhhh I can't be arsed to implement multi-category support yet?");
-            Console.ResetColor();
-        }
-        else
-        {
-            var typeCategoryJoined = typeCategory[0].Replace('/', ':');
-            var desiredCategory = $"Category:Components:{typeCategoryJoined}{{{{#translation:}}}}";
-
-            if (categoryCategory != null && categoryCategory.Target.ToString() != desiredCategory)
-            {
-                CategoryHelper.RemoveCategory(categories, categoryCategory);
-
-                categoryCategory = null;
-            }
-
-            if (categoryCategory == null)
-                CategoryHelper.AddCategory(categories, desiredCategory, niceName);
-        }
+        UpdateComponentCategoryCategories(type, categories, niceName);
 
         return parsed.ToString();
+    }
+
+    private static void UpdateComponentCategoryCategories(Type type, CategoryHelper.CategoryData categories, string niceName)
+    {
+        var expectedCategories = new HashSet<string>();
+        var pageCategories = new List<WikiLink>();
+
+        foreach (var (frooxCategory, wikiCategory) in CategoryDefinitions)
+        {
+            foreach (var category in CreateComponentPages.GetComponentCategory(type))
+            {
+                if (CategoryRelativeTo(category, frooxCategory) is { } relative && relative != "")
+                {
+                    var colons = relative.Replace('/', ':');
+                    expectedCategories.Add($"Category:{wikiCategory}:{colons}{{{{#translation:}}}}");
+                }
+            }
+
+            pageCategories.AddRange(categories.Categories
+                .Where(x => x.Target.ToString().StartsWith($"Category:{wikiCategory}:")));
+        }
+
+        foreach (var pageCategory in pageCategories)
+        {
+            if (!expectedCategories.Contains(pageCategory.Target.ToString()))
+                CategoryHelper.RemoveCategory(categories, pageCategory);
+        }
+
+        foreach (var expectedCategory in expectedCategories)
+        {
+            CategoryHelper.EnsureCategoryState(categories, expectedCategory, true, niceName);
+        }
+    }
+
+    private static bool IsInCategory(Type type, string category)
+    {
+        return CreateComponentPages.GetComponentCategory(type).Any(x => CategoryRelativeTo(x, category) != null);
+    }
+
+    private static string? CategoryRelativeTo(string category, string categoryBase)
+    {
+        var splitA = category.Split('/');
+        var splitB = categoryBase.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (!splitA.Take(splitB.Length).SequenceEqual(splitB))
+            return null;
+
+        return string.Join('/', splitA.Skip(splitB.Length));
     }
 
     private static (bool types, bool enums) CheckHasNestedTypes(Type type)
