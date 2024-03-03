@@ -86,7 +86,7 @@ public sealed class UpdateComponentPages : ICommand
         return 0;
     }
 
-    private static string? GenerateNewPageContent(string name, string fullname, string content)
+    public static string? GenerateNewPageContent(string name, string fullname, string content)
     {
         var type = WorkerManager.GetType(fullname);
         if (type == null)
@@ -253,5 +253,13 @@ public sealed class UpdateComponentPages : ICommand
             text.AsSpan(0, range.Start.GetOffset(text.Length)),
             replacement,
             text.AsSpan(range.End.GetOffset(text.Length)));
+    }
+
+    [Flags]
+    public enum PageChanges
+    {
+        None = 0,
+        Fields = 1 << 0,
+        Categories = 1 << 1,
     }
 }

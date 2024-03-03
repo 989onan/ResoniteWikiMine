@@ -2,7 +2,6 @@
 using System.Text;
 using Elements.Core;
 using FrooxEngine;
-using ResoniteWikiMine.Generation;
 
 namespace ResoniteWikiMine.Commands;
 
@@ -18,7 +17,9 @@ public sealed class CreateComponentPages : ICommand
         foreach (var componentName in args)
         {
             var component = WorkerInitializer.Workers.Single(x => x.Name == componentName);
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(component);
+            Console.ResetColor();
 
             var text = GenerateWikitext(component);
             Console.WriteLine(text);
@@ -42,27 +43,23 @@ public sealed class CreateComponentPages : ICommand
             }}
 
             == Fields ==
-            """);
 
-        sb.AppendLine(FieldFormatter.MakeComponentFieldsTemplate(type));
+            {{Table ComponentFields
+            }}
 
-        sb.AppendLine("""
             == Behavior ==
 
             == Examples ==
 
             == Related Components ==
+
             </translate>
             [[Category:ComponentStubs]]
-            [[Category:Components{{#translation:}}]]
             """);
 
-        foreach (var category in GetComponentCategory(type))
-        {
-            sb.AppendLine($"[[Category:Components:{category.Replace('/', ':')}{{{{#translation:}}}}]]");
-        }
-
-        return sb.ToString();
+        // Run generated page through UpdateComponentPages.
+        // This ensures consistency of our output, and simplifies the logic in this command.
+        return UpdateComponentPages.GenerateNewPageContent(name, type.FullName!, sb.ToString())!;
     }
 
     public static List<string> GetComponentCategory(Type type)
