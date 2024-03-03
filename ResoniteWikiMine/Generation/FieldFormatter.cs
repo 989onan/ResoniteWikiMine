@@ -73,7 +73,7 @@ public static class FieldFormatter
         for (var i = 0; i < list.Length; i++)
         {
             var field = list[i];
-            var desc = descriptions?.GetValueOrDefault(field.Name);
+            var desc = GetDescription(field, descriptions);
             var (fieldType, advanced) = FormatFieldType(field.Type, type);
 
             sb.Append($"|{field.Name}");
@@ -87,11 +87,29 @@ public static class FieldFormatter
         }
     }
 
+    private static string GetDescription(TypeFieldsEntry field, Dictionary<string, string>? descriptions)
+    {
+        if (descriptions == null)
+            return "";
+
+        if (descriptions.TryGetValue(field.Name, out var desc) && !string.IsNullOrWhiteSpace(desc))
+            return desc;
+
+        if (field.OldNames != null)
+        {
+            foreach (var oldName in field.OldNames)
+            {
+                if (descriptions.TryGetValue(oldName, out desc) && !string.IsNullOrWhiteSpace(desc))
+                    return desc;
+            }
+        }
+
+        return "";
+    }
+
     private static IEnumerable<TypeFieldsEntry> EnumerateFilteredSyncFields(Type type, string[] skipFields)
     {
-        return EnumerateSyncFields(type)
-            .Where(tuple => Array.IndexOf(skipFields, tuple.Name) == -1)
-            .Select(tuple => new TypeFieldsEntry(tuple.Name, tuple.Type));
+        return EnumerateSyncFields(type).Where(tuple => Array.IndexOf(skipFields, tuple.Name) == -1);
     }
 
     public static IEnumerable<TypeFieldsEntry> EnumerateSyncFields(Type type)
@@ -105,7 +123,10 @@ public static class FieldFormatter
             var field = initInfo.syncMemberFields[i];
             var fieldName = initInfo.syncMemberNames[i];
 
-            yield return new TypeFieldsEntry(fieldName, field.FieldType);
+            List<string>? oldNames = null;
+            initInfo.oldSyncMemberNames?.TryGetValue(fieldName, out oldNames);
+
+            yield return new TypeFieldsEntry(fieldName, field.FieldType, OldNames: oldNames);
         }
     }
 
@@ -212,5 +233,6 @@ public static class FieldFormatter
     public sealed record TypeFieldsEntry(
         string Name,
         Type Type,
-        string? Description = null);
+        string? Description = null,
+        List<string>? OldNames = null);
 }
