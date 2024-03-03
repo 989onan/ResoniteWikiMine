@@ -21,9 +21,9 @@ public sealed class PushUpdateComponentPages : ICommand
         var csrfToken = await GetCsrfToken(context.HttpClient);
         Console.WriteLine(csrfToken);
 
-        var toUpdate = db.Query<(int page, string name, string pageTitle, string newWikiText, int baseRevision)>("""
+        var toUpdate = db.Query<(int page, string name, string pageTitle, string newWikiText, int baseRevision, UpdateComponentPages.PageChanges changes)>("""
             SELECT
-                wcr.page, wcr.name, p.title, wcur.new_text, pc.revision_id
+                wcr.page, wcr.name, p.title, wcur.new_text, pc.revision_id, wcur.changes
             FROM wiki_component_update_report wcur
             INNER JOIN main.wiki_component_report wcr on wcur.name = wcr.name
             INNER JOIN main.page p on wcr.page = p.id
@@ -32,7 +32,7 @@ public sealed class PushUpdateComponentPages : ICommand
             """,
             new { Category = args[0] });
 
-        foreach (var (page, name, pageTitle, text, baseRevision) in toUpdate)
+        foreach (var (page, name, pageTitle, text, baseRevision, changes) in toUpdate)
         {
             // God save me.
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -47,7 +47,7 @@ public sealed class PushUpdateComponentPages : ICommand
             Console.WriteLine(")");
             Console.ResetColor();
 
-            await UpdatePage(context, name, page, baseRevision, csrfToken, text, "Automated: update component fields");
+            await UpdatePage(context, name, page, baseRevision, csrfToken, text, $"Automated: update {changes}");
         }
 
         transaction.Commit();

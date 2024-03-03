@@ -28,13 +28,15 @@ public sealed class UpdateComponentPages : ICommand
             CREATE TABLE wiki_component_update_report (
                 name TEXT PRIMARY KEY NOT NULL REFERENCES wiki_component_report(name),
                 new_text TEXT NOT NULL,
+                changes INT NOT NULL,
+                changes_text TEXT NOT NULL,
                 diff TEXT NOT NULL
             );
             """);
 
         db.Execute("""
             CREATE VIEW wiki_component_update_report_view AS
-            SELECT wcur.name, wcr.category, pc.content old_text, wcur.new_text, wcur.diff
+            SELECT wcur.name, wcr.category, pc.content old_text, wcur.new_text, wcur.changes_text, wcur.diff
             FROM wiki_component_update_report wcur
             INNER JOIN wiki_component_report wcr ON wcur.name = wcr.name
             INNER JOIN page_content pc ON pc.id = wcr.page
@@ -64,15 +66,20 @@ public sealed class UpdateComponentPages : ICommand
                 if (newContent == null)
                     continue;
 
-                var diff = DiffFormatter.GenerateDiff(content, newContent);
+                var (newContentText, changes) = newContent.Value;
+
+                var diff = DiffFormatter.GenerateDiff(content, newContentText);
 
                 db.Execute(
-                    "INSERT INTO wiki_component_update_report (name, new_text, diff) VALUES (@Name, @NewContent, @Diff)",
+                    "INSERT INTO wiki_component_update_report (name, new_text, diff, changes, changes_text) " +
+                    "VALUES (@Name, @NewContent, @Diff, @Changes, @ChangesText)",
                     new
                     {
                         Name = name,
-                        NewContent = newContent,
-                        Diff = diff
+                        NewContent = newContentText,
+                        Diff = diff,
+                        Changes = changes,
+                        ChangesText = changes.ToString()
                     });
             }
             catch (Exception e)
@@ -86,7 +93,7 @@ public sealed class UpdateComponentPages : ICommand
         return 0;
     }
 
-    public static string? GenerateNewPageContent(string name, string fullname, string content)
+    public static (string newContent, PageChanges changes)? GenerateNewPageContent(string name, string fullname, string content)
     {
         var type = WorkerManager.GetType(fullname);
         if (type == null)
@@ -95,10 +102,24 @@ public sealed class UpdateComponentPages : ICommand
             return null;
         }
 
-        content = UpdateComponentFields(type, name, content);
-        content = UpdateComponentPageCategories(type, name, content);
+        var prevContent = content;
+        var changes = PageChanges.None;
 
-        return content;
+        content = UpdateComponentFields(type, name, content);
+        CheckChange(PageChanges.Fields);
+        content = UpdateComponentPageCategories(type, name, content);
+        CheckChange(PageChanges.Categories);
+
+        return (content, changes);
+
+        void CheckChange(PageChanges change)
+        {
+            if (prevContent != content)
+            {
+                prevContent = content;
+                changes |= change;
+            }
+        }
     }
 
     private static string UpdateComponentFields(Type type, string name, string content)

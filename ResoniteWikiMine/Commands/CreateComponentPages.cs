@@ -59,7 +59,7 @@ public sealed class CreateComponentPages : ICommand
 
         // Run generated page through UpdateComponentPages.
         // This ensures consistency of our output, and simplifies the logic in this command.
-        return UpdateComponentPages.GenerateNewPageContent(name, type.FullName!, sb.ToString())!;
+        return UpdateComponentPages.GenerateNewPageContent(name, type.FullName!, sb.ToString())!.Value.newContent;
     }
 
     public static List<string> GetComponentCategory(Type type)
