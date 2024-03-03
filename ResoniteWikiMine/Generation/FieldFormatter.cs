@@ -156,13 +156,20 @@ public static class FieldFormatter
 
         var rootType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
 
-        var genericParams = "";
-        if (type.IsGenericType)
+        if (IsNestedType(type, containingType))
         {
-            genericParams = "|" + string.Join(", ", type.GenericTypeArguments.Select(x => MakeDisplayType(x, containingType)));
+            return ($"{{{{RootFieldType|(nested)|{MakeDisplayType(type, containingType)}}}}}", true);
         }
+        else
+        {
+            var genericParams = "";
+            if (type.IsGenericType)
+            {
+                genericParams = "|" + string.Join(", ", type.GenericTypeArguments.Select(x => MakeDisplayType(x, containingType)));
+            }
 
-        return ($"{{{{RootFieldType|{SimpleTypeName(rootType)}{genericParams}}}}}", true);
+            return ($"{{{{RootFieldType|{SimpleTypeName(rootType)}{genericParams}}}}}", true);
+        }
     }
 
     private static bool IsNestedType(Type type, Type? containingType)
