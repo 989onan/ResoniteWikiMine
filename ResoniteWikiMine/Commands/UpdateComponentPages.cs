@@ -159,6 +159,25 @@ public sealed class UpdateComponentPages : ICommand
             true,
             niceName);
 
+        // Remove categories without translation markers that shouldn't be used.
+        CategoryHelper.EnsureCategoryState(
+            categories,
+            "Category:Components",
+            false,
+            niceName);
+
+        CategoryHelper.EnsureCategoryState(
+            categories,
+            "Category:Components With Nested Types",
+            false,
+            niceName);
+
+        CategoryHelper.EnsureCategoryState(
+            categories,
+            "Category:Components With Nested Enums",
+            false,
+            niceName);
+
         // Synchronize category categories (Components:Assets and so on)
 
         var categoryCategory = categories.Categories
