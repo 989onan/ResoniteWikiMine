@@ -48,7 +48,7 @@ public static class FieldFormatter
     internal static string MakeComponentFieldsTemplate(Type type, Dictionary<string, string>? descriptions = null)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("{{Table ComponentFields");
+        sb.Append("{{Table ComponentFields\n");
 
         MakeFieldsTemplateCore(sb, type, SkipComponentFields, descriptions);
 
@@ -59,7 +59,7 @@ public static class FieldFormatter
     internal static string MakeTypeFieldsTemplate(Type type, Dictionary<string, string>? descriptions = null)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("{{Table TypeFields");
+        sb.Append("{{Table TypeFields\n");
 
         MakeFieldsTemplateCore(sb, type, Array.Empty<string>(), descriptions);
 
@@ -82,7 +82,8 @@ public static class FieldFormatter
                 sb.Append($"|TypeAdv{i}=true");
             sb.Append($"|{desc}");
 
-            sb.AppendLine(field.Description);
+            sb.Append(field.Description);
+            sb.Append('\n');
         }
     }
 
