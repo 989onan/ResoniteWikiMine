@@ -37,6 +37,23 @@ public static class MediawikiApi
             continueProps.Select(x => $"{HttpUtility.UrlEncode(x.Key)}={HttpUtility.UrlEncode(x.Value)}"));
         return baseUrl + "&" + suffix;
     }
+
+    /// <summary>
+    /// Get a CSRF token necessary for committing edit actions via the MediaWiki API.
+    /// </summary>
+    public static async Task<string> GetCsrfToken(HttpClient http)
+    {
+        const string url = Constants.WikiApiUrl + "?action=query&format=json&meta=tokens";
+
+        var response = await http.GetFromJsonAsync<QueryResponse<TokenResponse>>(url);
+        return response!.Query.Tokens["csrftoken"];
+    }
+
+    private sealed record TokenResponse(Dictionary<string, string> Tokens);
 }
 
 public sealed record QueryResponse<T>(T Query, Dictionary<string, string>? Continue);
+
+public sealed record EditResponseWrap(EditResponse edit);
+
+public sealed record EditResponse(string result, int newrevid);

@@ -31,6 +31,7 @@ public sealed partial class WikiComponentReport : ICommand
         var db = context.DbConnection;
 
         db.Execute("""
+            DROP TABLE IF EXISTS wiki_component_create;
             DROP TABLE IF EXISTS wiki_component_update_report;
             DROP VIEW IF EXISTS wiki_component_report_view;
             DROP TABLE IF EXISTS wiki_component_report;
@@ -55,6 +56,7 @@ public sealed partial class WikiComponentReport : ICommand
         var components = new List<ComponentEntry>();
         FlattenComponents(WorkerInitializer.ComponentLibrary, "", components);
         components.RemoveAll(t => t.Type.IsAssignableTo(typeof(ProtoFluxNode)));
+        components.RemoveAll(t => t.Type.IsAssignableTo(typeof(ProtoFluxEngineProxy)));
 
         var typeNamesInv = GetOldTypeNamesInverse();
 
@@ -112,7 +114,7 @@ public sealed partial class WikiComponentReport : ICommand
         return null;
     }
 
-    private static string? GetTypeWithoutGenericSuffix(string name)
+    public static string? GetTypeWithoutGenericSuffix(string name)
     {
         var match = StripGenericSuffixRegex.Match(name);
         if (match.Success)

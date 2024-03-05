@@ -12,10 +12,32 @@ public class ImportComponentPageList : ICommand
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
 
-        const string url = Constants.WikiApiUrl +
-                           "?action=query&generator=categorymembers&gcmtitle=Category:Components&format=json&prop=revisions&rvslots=main&rvprop=content|ids";
+        var namespaceComponents = db.QuerySingle<int>("SELECT id FROM site_namespace WHERE name = 'Component'");
 
-        await foreach (var response in MediawikiApi.MakeContinueEnumerable<CategoryMembersResponse>(
+        Console.WriteLine("Importing by Components category");
+
+        await ImportFromUrl(
+            context,
+            Constants.WikiApiUrl +
+            "?action=query&generator=categorymembers&gcmtitle=Category:Components&format=json&prop=revisions&rvslots=main&rvprop=content|ids");
+
+        Console.WriteLine("Importing by Component: namespace");
+
+        await ImportFromUrl(
+            context,
+            Constants.WikiApiUrl +
+            $"?action=query&generator=allpages&gapnamespace={namespaceComponents}&format=json&prop=revisions&rvslots=main&rvprop=content|ids");
+
+        await transaction.CommitAsync();
+
+        return 0;
+    }
+
+    private static async Task ImportFromUrl(WorkContext context, string url)
+    {
+        var db = context.DbConnection;
+
+        await foreach (var response in MediawikiApi.MakeContinueEnumerable<GeneratorResponse>(
                            context.HttpClient, url))
         {
             foreach (var page in response.Pages.Values)
@@ -38,31 +60,26 @@ public class ImportComponentPageList : ICommand
                         revision.RevisionId
                     });
             }
-
-            await Task.Delay(15);
         }
-
-        await transaction.CommitAsync();
-
-        return 0;
     }
 
-    private sealed record CategoryMembersResponse(
+    private sealed record GeneratorResponse(
         [property: JsonPropertyName("pages")]
-        Dictionary<string, CategoryMembersPage> Pages);
+        Dictionary<string, GeneratorPage> Pages);
 
-    private sealed record CategoryMembersPage(
+    private sealed record GeneratorPage(
         [property: JsonPropertyName("pageid")] int PageId,
         [property: JsonPropertyName("ns")] int NamespaceId,
         string Title,
-        CategoryMembersRevision[] Revisions);
+        GeneratorRevision[] Revisions);
 
-    private sealed record CategoryMembersRevision(
+    private sealed record GeneratorRevision(
         [property: JsonPropertyName("revid")] int RevisionId,
-        [property: JsonPropertyName("parentid")] int ParentId,
-        Dictionary<string, CategoryMembersRevisionSlot> Slots);
+        [property: JsonPropertyName("parentid")]
+        int ParentId,
+        Dictionary<string, GeneratorRevisionSlot> Slots);
 
-    private sealed record CategoryMembersRevisionSlot(
+    private sealed record GeneratorRevisionSlot(
         [property: JsonPropertyName("contentmodel")]
         string ContentModel,
         [property: JsonPropertyName("contentformat")]

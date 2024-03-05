@@ -20,7 +20,8 @@ public static class FrooxLoader
 
         WorkerInitializer.Initialize(GetAllFrooxTypes(), true);
         Console.ResetColor();
-        _isFrooxWorkerInitialized = false;
+
+        _isFrooxWorkerInitialized = true;
     }
 
     private static void PreloadFrooxAssemblies()
@@ -42,4 +43,17 @@ public static class FrooxLoader
         return list;
     }
 
+    public static Type? FindFrooxType(string name)
+    {
+        if (!_isFrooxWorkerInitialized)
+            throw new InvalidOperationException();
+
+        foreach (var assembly in FrooxLoader.FrooxAssemblies)
+        {
+            if (assembly.GetType(name) is { } type)
+                return type;
+        }
+
+        return null;
+    }
 }

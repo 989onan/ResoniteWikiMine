@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Text;
+using Dapper;
 using Elements.Core;
 using FrooxEngine;
 
@@ -12,18 +13,78 @@ public sealed class CreateComponentPages : ICommand
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
 
-        FrooxLoader.InitializeFrooxWorker();
-
-        foreach (var componentName in args)
+        var excludeCategory = new HashSet<string>();
+        for (var i = 0; i < args.Length; i++)
         {
-            var component = WorkerInitializer.Workers.Single(x => x.Name == componentName);
+            switch (args[i])
+            {
+                case "--exclude":
+                    excludeCategory.Add(args[++i]);
+                    break;
+            }
+        }
+
+        var prevRet = WikiComponentReport.RunCoreTransacted(context, []);
+        if (!prevRet)
+            return 1;
+
+        db.Execute("DELETE FROM wiki_page_create_queue");
+
+        var toCreate = db.Query<(string fullName, string category)>(
+            "SELECT full_name, category FROM wiki_component_report WHERE page IS NULL ORDER BY 2, 1");
+
+        var lastCategory = "";
+        foreach (var (fullName, category) in toCreate)
+        {
+            if (excludeCategory.Contains(category))
+                continue;
+
+            if (FrooxLoader.FindFrooxType(fullName) is not { } componentType)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Unable to find type: {fullName}");
+                Console.ResetColor();
+                continue;
+            }
+
+            if (lastCategory != category)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"Category: {category}");
+                Console.ResetColor();
+                lastCategory = category;
+            }
+
+            var title = componentType.Name;
+            if (WikiComponentReport.GetTypeWithoutGenericSuffix(componentType.Name) is { } nonGeneric)
+                title = nonGeneric;
+
+            title = $"Component:{title}";
+
+            // God save me.
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(component);
+            Console.Write("Component: ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(fullName.PadRight(60));
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(" (page: ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(title);
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(")");
             Console.ResetColor();
 
-            var text = GenerateWikitext(component);
-            Console.WriteLine(text);
+            var text = GenerateWikitext(componentType);
+
+            db.Execute("INSERT INTO wiki_page_create_queue(title, text) VALUES (@Title, @Text)",
+                new
+                {
+                    Title = title,
+                    Text = text
+                });
         }
+
+        transaction.Commit();
 
         return 0;
     }
@@ -34,16 +95,13 @@ public sealed class CreateComponentPages : ICommand
 
         var sb = new StringBuilder();
         sb.AppendLine($$$"""
-            <languages></languages>
-            <translate>
-            {{stub}}
             {{Infobox Component
             |Image={{{name}}}Component.png
             |Name={{{GetNiceName(type)}}}
             }}
+            {{stub}}
 
-            == Fields ==
-
+            == Usage ==
             {{Table ComponentFields
             }}
 
@@ -51,9 +109,8 @@ public sealed class CreateComponentPages : ICommand
 
             == Examples ==
 
-            == Related Components ==
+            == See Also ==
 
-            </translate>
             [[Category:ComponentStubs]]
             """);
 

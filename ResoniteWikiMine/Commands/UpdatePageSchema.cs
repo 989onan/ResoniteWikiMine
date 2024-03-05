@@ -35,6 +35,14 @@ public class UpdatePageSchema : ICommand
             )
             """);
 
+        db.Execute("""
+            DROP TABLE IF EXISTS wiki_page_create_queue;
+            CREATE TABLE wiki_page_create_queue (
+                title TEXT PRIMARY KEY NOT NULL,
+                text TEXT NOT NULL
+            );
+            """);
+
         await transaction.CommitAsync();
 
         return 0;

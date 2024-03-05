@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Dapper;
 using ResoniteWikiMine.MediaWiki;
 
@@ -18,7 +17,7 @@ public sealed class PushUpdateComponentPages : ICommand
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
 
-        var csrfToken = await GetCsrfToken(context.HttpClient);
+        var csrfToken = await MediawikiApi.GetCsrfToken(context.HttpClient);
         // Console.WriteLine(csrfToken);
 
         var toUpdate = db.Query<(int page, string name, string pageTitle, string newWikiText, int baseRevision, UpdateComponentPages.PageChanges changes)>("""
@@ -53,14 +52,6 @@ public sealed class PushUpdateComponentPages : ICommand
         transaction.Commit();
 
         return 0;
-    }
-
-    private static async Task<string> GetCsrfToken(HttpClient http)
-    {
-        const string url = Constants.WikiApiUrl + "?action=query&format=json&meta=tokens";
-
-        var response = await http.GetFromJsonAsync<QueryResponse<TokenResponse>>(url);
-        return response!.Query.Tokens["csrftoken"];
     }
 
     private static async Task UpdatePage(WorkContext context,
@@ -109,10 +100,4 @@ public sealed class PushUpdateComponentPages : ICommand
                 new { Name = name });
         }
     }
-
-    private sealed record TokenResponse(Dictionary<string, string> Tokens);
-
-    private sealed record EditResponseWrap(EditResponse edit);
-
-    private sealed record EditResponse(string result, int newrevid);
 }

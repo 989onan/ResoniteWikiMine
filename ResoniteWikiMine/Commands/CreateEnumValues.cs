@@ -13,7 +13,7 @@ public sealed class CreateEnumValues : ICommand
         foreach (var arg in args)
         {
             Console.WriteLine(typeof(IKSolverVR.Arm.ShoulderRotationMode));
-            var type = GetType(arg);
+            var type = FrooxLoader.FindFrooxType(arg);
             if (type == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -41,17 +41,5 @@ public sealed class CreateEnumValues : ICommand
         }
 
         return Task.FromResult(0);
-    }
-
-    private static Type? GetType(string name)
-    {
-        foreach (var assembly in FrooxLoader.FrooxAssemblies)
-        {
-            if (assembly.GetType(name) is { } type)
-                return type;
-        }
-
-
-        return null;
     }
 }
