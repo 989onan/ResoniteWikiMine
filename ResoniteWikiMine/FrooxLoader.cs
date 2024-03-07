@@ -50,7 +50,7 @@ public static class FrooxLoader
         if (!_isFrooxWorkerInitialized)
             throw new InvalidOperationException();
 
-        foreach (var assembly in FrooxLoader.FrooxAssemblies)
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
             if (assembly.GetType(name) is { } type)
                 return type;

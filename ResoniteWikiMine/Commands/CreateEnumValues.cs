@@ -26,7 +26,22 @@ public sealed class CreateEnumValues : ICommand
             Console.ResetColor();
 
             var sb = new StringBuilder();
-            sb.AppendLine("{{Table EnumValues");
+            sb.AppendLine($$$"""
+                {{Infobox Enum
+                |name={{{type.Name}}}
+                |type={{{type.FullName}}}
+                """);
+
+            if (type.IsNested)
+                sb.AppendLine("|nested=true");
+
+            sb.AppendLine("""
+                }}
+
+                {{stub}}
+
+                {{Table EnumValues
+                """);
 
             foreach (var name in Enum.GetNames(type).OrderBy(name => Enum.Parse(type, name)))
             {
