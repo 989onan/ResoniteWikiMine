@@ -26,6 +26,8 @@ public static class FrooxLoader
 
     private static void PreloadFrooxAssemblies()
     {
+        FrooxAssemblies.Add(Assembly.Load("Elements.Core"));
+        FrooxAssemblies.Add(Assembly.Load("Elements.Assets"));
         FrooxAssemblies.Add(Assembly.Load("FrooxEngine"));
         FrooxAssemblies.Add(Assembly.Load("ProtoFluxBindings"));
         FrooxAssemblies.Add(Assembly.Load("ProtoFlux.Nodes.FrooxEngine"));
