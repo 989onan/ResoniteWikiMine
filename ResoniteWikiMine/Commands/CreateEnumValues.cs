@@ -12,7 +12,6 @@ public sealed class CreateEnumValues : ICommand
 
         foreach (var arg in args)
         {
-            Console.WriteLine(typeof(IKSolverVR.Arm.ShoulderRotationMode));
             var type = FrooxLoader.FindFrooxType(arg);
             if (type == null)
             {
