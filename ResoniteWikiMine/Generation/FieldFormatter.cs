@@ -193,6 +193,9 @@ public static class FieldFormatter
 
     private static string GetTypeNamespace(Type type)
     {
+        if (type.IsAbstract)
+            return DefaultNamespace;
+
         foreach (var (baseType, ns) in TypeNamespaces)
         {
             if (type.IsAssignableTo(baseType))
