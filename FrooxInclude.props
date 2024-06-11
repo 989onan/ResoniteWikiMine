@@ -28,8 +28,16 @@
             <HintPath>$(ResonitePath)\Resonite_Data\Managed\ProtoFluxBindings.dll</HintPath>
         </Reference>
 
+      <Reference Include="Rug.Osc">
+        <HintPath>$(ResonitePath)\Resonite_Data\Managed\Rug.Osc.dll</HintPath>
+      </Reference>
+
       <Reference Include="SkyFrost.Base">
         <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.dll</HintPath>
+      </Reference>
+
+      <Reference Include="SkyFrost.Base.Models">
+        <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.Models.dll</HintPath>
       </Reference>
     </ItemGroup>
 </Project>
