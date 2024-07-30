@@ -101,7 +101,7 @@ public sealed class UpdateComponentPages : ICommand
 
     public static (string newContent, PageChanges changes)? GenerateNewPageContent(string name, string fullname, string content)
     {
-        var type = WorkerManager.GetType(fullname);
+        var type = FrooxLoader.GetType(fullname);
         if (type == null)
         {
             Console.WriteLine($"Unable to find .NET type for {name} ???");

@@ -141,11 +141,22 @@ public sealed partial class WikiComponentReport : ICommand
 
     private static Dictionary<string, string[]> GetOldTypeNamesInverse()
     {
-        var table = (Dictionary<string, string>)typeof(WorkerInitializer)
-            .GetField("oldTypenames", BindingFlags.NonPublic | BindingFlags.Static)!
-            .GetValue(null)!;
+        var field = typeof(AssemblyTypeRegistry).GetField(
+            "_movedTypes",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-        return table.GroupBy(x => x.Value).ToDictionary(g => g.Key, g => g.Select(x => x.Key).ToArray());
+        var allMoved = new Dictionary<string, Type>();
+
+        foreach (var registry in FrooxLoader.FrooxTypeRegistries)
+        {
+            var moved = (Dictionary<string, Type>) field.GetValue(registry)!;
+            foreach (var (oldName, type) in moved)
+            {
+                allMoved.Add(oldName, type);
+            }
+        }
+
+        return allMoved.GroupBy(x => x.Value).ToDictionary(g => g.Key.FullName!, g => g.Select(x => x.Key).ToArray());
     }
 
     private sealed record ComponentEntry(Type Type, string Category);
