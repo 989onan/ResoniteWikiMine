@@ -11,7 +11,7 @@ if (args.Length < 1)
 }
 
 var commandType = typeof(Program).Assembly.DefinedTypes.
-    SingleOrDefault(x => x.IsAssignableTo(typeof(ICommand)) && x.Name == args[0]);
+    SingleOrDefault(x => x.IsAssignableTo(typeof(ICommand)) && x.Name == args[0] && !x.IsAbstract);
 
 if (commandType == null)
 {
