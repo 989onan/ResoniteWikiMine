@@ -16,7 +16,7 @@ public sealed partial class WikiComponentReport : ICommand
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
 
-        if (RunCoreTransacted(context, args))
+        if (RunCoreTransacted(context))
         {
             await transaction.CommitAsync();
 
@@ -26,7 +26,7 @@ public sealed partial class WikiComponentReport : ICommand
         return 1;
     }
 
-    public static bool RunCoreTransacted(WorkContext context, string[] args)
+    public static bool RunCoreTransacted(WorkContext context)
     {
         var db = context.DbConnection;
 

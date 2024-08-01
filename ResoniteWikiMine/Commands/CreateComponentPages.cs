@@ -24,7 +24,7 @@ public sealed class CreateComponentPages : ICommand
             }
         }
 
-        var prevRet = WikiComponentReport.RunCoreTransacted(context, []);
+        var prevRet = WikiComponentReport.RunCoreTransacted(context);
         if (!prevRet)
             return 1;
 
@@ -116,7 +116,7 @@ public sealed class CreateComponentPages : ICommand
 
         // Run generated page through UpdateComponentPages.
         // This ensures consistency of our output, and simplifies the logic in this command.
-        return UpdateComponentPages.GenerateNewPageContent(name, type.FullName!, sb.ToString())!.Value.newContent;
+        return UpdateComponentPages.GenerateNewPageContent(type, sb.ToString())!.NewContent;
     }
 
     public static List<string> GetComponentCategory(Type type)

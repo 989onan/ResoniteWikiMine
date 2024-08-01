@@ -8,11 +8,13 @@ public sealed class PushUpdateComponentPages : ICommand
 {
     public async Task<int> Run(WorkContext context, string[] args)
     {
+        /*
         if (args.Length != 1)
         {
             Console.WriteLine("ERROR: specify category as single argument");
             return 1;
         }
+        */
 
         var db = context.DbConnection;
         await using var transaction = await db.BeginTransactionAsync();
@@ -20,16 +22,15 @@ public sealed class PushUpdateComponentPages : ICommand
         var csrfToken = await MediawikiApi.GetCsrfToken(context.HttpClient);
         // Console.WriteLine(csrfToken);
 
-        var toUpdate = db.Query<(int page, string name, string pageTitle, string newWikiText, int baseRevision, UpdateComponentPages.PageChanges changes)>("""
+        var toUpdate = db.Query<(int page, string name, string pageTitle, string newWikiText, int baseRevision, string changes)>("""
             SELECT
-                wcr.page, wcr.name, p.title, wcur.new_text, pc.revision_id, wcur.changes
+                wcr.page, wcr.name, p.title, wcur.new_text, pc.revision_id, wcur.changes_text
             FROM wiki_component_update_report wcur
             INNER JOIN main.wiki_component_report wcr on wcur.name = wcr.name
             INNER JOIN main.page p on wcr.page = p.id
             INNER JOIN main.page_content pc on p.id = pc.id
-            WHERE wcr.category = @Category AND diff != ''
-            """,
-            new { Category = args[0] });
+            WHERE diff != ''
+            """);
 
         foreach (var (page, name, pageTitle, text, baseRevision, changes) in toUpdate)
         {
@@ -46,7 +47,7 @@ public sealed class PushUpdateComponentPages : ICommand
             Console.WriteLine(")");
             Console.ResetColor();
 
-            await UpdatePage(context, name, page, baseRevision, csrfToken, text, $"Automated: update {changes}");
+            await UpdatePage(context, name, page, baseRevision, csrfToken, text, $"Automated: {changes}");
         }
 
         transaction.Commit();
