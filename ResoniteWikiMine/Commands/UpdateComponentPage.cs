@@ -7,7 +7,7 @@ using static ResoniteWikiMine.Utility.ComponentBatchUpdater;
 
 namespace ResoniteWikiMine.Commands;
 
-public sealed class UpdateComponentPages : ICommand
+public sealed class UpdateComponentPage : ICommand
 {
     private static readonly (string frooxCategory, string wikiCategory)[] CategoryDefinitions =
     [
@@ -17,10 +17,10 @@ public sealed class UpdateComponentPages : ICommand
 
     public async Task<int> Run(WorkContext context, string[] args)
     {
-        return UpdateComponentPages(
+        return UpdateComponentPage(
             context,
             _ => true,
-            page => GenerateNewPageContent(page.Type, page.Content));
+            page => GenerateNewPageContent(page.Type, page.Content), args[0]);
     }
 
     public static BatchUpdatePageResult? GenerateNewPageContent(Type type, string content)
@@ -28,27 +28,14 @@ public sealed class UpdateComponentPages : ICommand
         var prevContent = content;
         var changes = PageChanges.None;
 
-        //content = UpdateComponentFields(type, type.Name, content);
+        content = UpdateComponentFields(type, type.Name, content);
         content = UpdateSyncDelegateFields(type, type.Name, content);
-        CheckChange(PageChanges.SyncDelegates);
-        //CheckChange(PageChanges.Fields);
-        //content = UpdateComponentPageCategories(type, type.Name, content);
-        //CheckChange(PageChanges.Categories);
-
-
+        CheckChange(PageChanges.Fields);
+        content = UpdateComponentPageCategories(type, type.Name, content);
+        CheckChange(PageChanges.Categories);
 
         if (changes == PageChanges.None)
             return null;
-        else
-        {
-            var parser = new WikitextParser();
-            var parsed = parser.Parse(content);
-            var categories = CategoryHelper.GetCategories(parsed);
-            CategoryHelper.EnsureCategoryState(categories, "Category:ComponentStub", true);
-            content = parsed.ToString();
-            CheckChange(PageChanges.Categories);
-        }
-
 
         return new BatchUpdatePageResult
         {
@@ -85,42 +72,18 @@ public sealed class UpdateComponentPages : ICommand
     private static string UpdateSyncDelegateFields(Type type, string name, string content)
     {
         var fieldsTemplate = PageContentParser.GetTemplateInPage(content, "Table ComponentTriggers");
-        var newcontent = "";
         if (fieldsTemplate == null)
         {
-            var componentfields = PageContentParser.GetTemplateInPage(content, "Table ComponentFields");
-            if (componentfields != null)
-            {
-                newcontent = content.Insert(componentfields.Range.End.Value, "\n\n== Sync Delegates ==\n{{Table ComponentTriggers\n}}");
-
-                fieldsTemplate = PageContentParser.GetTemplateInPage(newcontent, "Table ComponentTriggers");
-
-                if (fieldsTemplate == null) return content;
-                Console.WriteLine($"found ComponentFields in page for {name}, generating in absence of ComponentTriggers!");
-            }
-            else
-            {
-                Console.WriteLine($"Unable to find Table ComponentTriggers in page for {name}");
-                return content;
-            }
+            Console.WriteLine($"Unable to find Table ComponentTriggers in page for {name}");
+            return content;
         }
 
         var fieldDescriptions = ParseTableFields(fieldsTemplate);
-        string newcontent3 = SyncDelegateFormatter.MakeSyncDelegatesTemplate(type, fieldDescriptions);
 
-        if (!"{{Table ComponentTriggers\n}}".Equals(newcontent3))
-        {
-            if(newcontent != "")
-            {
-                content = newcontent;
-            }
-            Console.WriteLine($"updating  ComponentTriggers for {name}, {fieldsTemplate == null}");
-            return SpliceString(
+        return SpliceString(
             content,
             fieldsTemplate.Range,
-            newcontent3);
-        }
-        return content;
+            SyncDelegateFormatter.MakeSyncDelegatesTemplate(type, fieldDescriptions));
     }
 
     private static string UpdateComponentPageCategories(Type type, string name, string content)
@@ -284,6 +247,5 @@ public sealed class UpdateComponentPages : ICommand
         None = 0,
         Fields = 1 << 0,
         Categories = 1 << 1,
-        SyncDelegates = 1 << 2,
     }
 }

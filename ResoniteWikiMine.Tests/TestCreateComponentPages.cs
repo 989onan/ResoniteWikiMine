@@ -1,4 +1,4 @@
-﻿using FrooxEngine;
+using FrooxEngine;
 using FrooxEngine.FinalIK;
 using ResoniteWikiMine.Commands;
 

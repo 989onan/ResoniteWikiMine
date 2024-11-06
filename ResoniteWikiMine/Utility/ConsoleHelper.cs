@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace ResoniteWikiMine.Utility;
 
@@ -17,7 +17,7 @@ public static unsafe partial class ConsoleHelper
 
     private static void SetInputEchoEnabledWindows(bool enabled)
     {
-        var handle = GetStdHandle(unchecked((uint)-10));
+        var handle = GetStdHandle(unchecked((uint) -10));
         uint mode;
         if (GetConsoleMode(handle, &mode) == 0)
             return;

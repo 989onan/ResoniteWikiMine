@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using ResoniteWikiMine;
@@ -34,7 +34,7 @@ var workContext = new WorkContext(cookieContainer, httpClient, dbConnection, aut
 
 LoadCookiesFromDb(workContext);
 
-var command = (ICommand)Activator.CreateInstance(commandType)!;
+var command = (ICommand) Activator.CreateInstance(commandType)!;
 return await command.Run(workContext, args[1..]);
 
 void LoadCookiesFromDb(WorkContext context)

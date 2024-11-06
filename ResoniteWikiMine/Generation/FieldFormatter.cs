@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text;
 using Elements.Core;
 using FrooxEngine;
@@ -122,7 +122,7 @@ public static class FieldFormatter
 
     public static IEnumerable<TypeFieldsEntry> EnumerateSyncFields(Type type)
     {
-        var initInfo = (WorkerInitInfo)typeof(WorkerInitializer)
+        var initInfo = (WorkerInitInfo) typeof(WorkerInitializer)
             .GetMethod("GetInitInfo", BindingFlags.Static | BindingFlags.NonPublic, [typeof(Type)])!
             .Invoke(null, [type])!;
 
@@ -172,12 +172,13 @@ public static class FieldFormatter
         }
     }
 
-    private static bool IsNestedType(Type type, Type? containingType)
+
+    public static bool IsNestedType(Type type, Type? containingType)
     {
         return type.IsNested && type.DeclaringType == containingType;
     }
 
-    private static Type? UnwrapSilentType(Type type)
+    public static Type? UnwrapSilentType(Type type)
     {
         if (type is not { IsGenericType: true, GenericTypeArguments.Length: 1 })
             return null;
@@ -205,12 +206,12 @@ public static class FieldFormatter
         return DefaultNamespace;
     }
 
-    private static bool IsNonDefaultNamespace(Type type)
+    public static bool IsNonDefaultNamespace(Type type)
     {
         return GetTypeNamespace(type) != DefaultNamespace;
     }
 
-    private static string MakeDisplayType(Type type, Type? containingType)
+    public static string MakeDisplayType(Type type, Type? containingType)
     {
         if (type.IsGenericParameter)
             return type.Name;
@@ -239,6 +240,22 @@ public static class FieldFormatter
 
             sb.Append("&gt;");
         }
+
+        return sb.ToString();
+    }
+
+    public static string MakeDisplayTypeNoNesting(Type type, Type? containingType)
+    {
+        if (type.IsGenericParameter)
+            return type.Name;
+
+        var sb = new StringBuilder();
+        // If this is a nested type of the type we're creating the page for,
+        // we generate an internal anchor link instead.
+        var typePage = IsNestedType(type, containingType)
+            ? $"#{SimpleTypeName(type)}"
+            : $"{GetTypeNamespace(type)}{SimpleTypeName(type)}";
+        sb.Append($"[[{typePage}|{SimpleTypeName(type)}]]");
 
         return sb.ToString();
     }

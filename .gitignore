@@ -8,3 +8,6 @@ riderModule.iml
 *.db-shm
 *.db-wal
 *.user
+/.vs/ResoniteWikiMine/FileContentIndex
+/.vs/ResoniteWikiMine/DesignTimeBuild
+/.vs/ResoniteWikiMine/v17

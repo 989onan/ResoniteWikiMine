@@ -4,7 +4,7 @@ using static ResoniteWikiMine.Utility.ComponentBatchUpdater;
 
 namespace ResoniteWikiMine.Commands;
 
-public sealed class SetComponentFieldDesc : ICommand
+public sealed class SetSyncMethodFieldDesc : ICommand
 {
     // Usage: SetComponentFieldDesc <base type> <field> <value>
 
@@ -31,12 +31,6 @@ public sealed class SetComponentFieldDesc : ICommand
 
     private static BatchUpdatePageResult? UpdatePageContent(BatchUpdatePage page, string fieldName, string fieldDesc)
     {
-        var fieldsTemplate = PageContentParser.GetTemplateInPage(page.Content, "Table ComponentFields");
-        if (fieldsTemplate == null)
-        {
-            Console.WriteLine($"Unable to find Table ComponentFields in page for {page.Name}");
-            return null;
-        }
 
         var syncdelegatesTemplate = PageContentParser.GetTemplateInPage(page.Content, "Table ComponentTriggers");
         if (syncdelegatesTemplate == null)
@@ -45,17 +39,9 @@ public sealed class SetComponentFieldDesc : ICommand
             return null;
         }
 
-        var fieldDescriptions = UpdateComponentPage.ParseTableFields(fieldsTemplate);
+        var fieldDescriptions = UpdateComponentPage.ParseTableFields(syncdelegatesTemplate);
 
         if (fieldDescriptions.TryGetValue(fieldName, out var existingDesc) && !IsEmptyFieldDesc(existingDesc))
-        {
-            Console.WriteLine($"Skipping field on {page.Name}: already has description");
-            return null;
-        }
-
-        var syncdelegatesDescriptions = UpdateComponentPage.ParseTableFields(fieldsTemplate);
-
-        if (syncdelegatesDescriptions.TryGetValue(fieldName, out var existingDesc2) && !IsEmptyFieldDesc(existingDesc2))
         {
             Console.WriteLine($"Skipping field on {page.Name}: already has description");
             return null;
@@ -65,8 +51,8 @@ public sealed class SetComponentFieldDesc : ICommand
 
         var newContent = UpdateComponentPage.SpliceString(
             page.Content,
-            fieldsTemplate.Range,
-            FieldFormatter.MakeComponentFieldsTemplate(page.Type, fieldDescriptions));
+            syncdelegatesTemplate.Range,
+            SyncDelegateFormatter.MakeSyncDelegatesTemplate(page.Type, fieldDescriptions));
 
         return new BatchUpdatePageResult
         {
