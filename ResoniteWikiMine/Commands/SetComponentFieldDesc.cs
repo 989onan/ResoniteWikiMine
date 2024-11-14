@@ -1,3 +1,4 @@
+using Elements.Core;
 using ResoniteWikiMine.Generation;
 using ResoniteWikiMine.MediaWiki;
 using static ResoniteWikiMine.Utility.ComponentBatchUpdater;
@@ -13,6 +14,7 @@ public sealed class SetComponentFieldDesc : ICommand
         FrooxLoader.InitializeFrooxWorker();
 
         var baseTypeName = args[0];
+        var replacedescriptions = args[1];
         var baseType = FrooxLoader.FindFrooxType(baseTypeName);
         if (baseType == null)
         {
@@ -20,16 +22,29 @@ public sealed class SetComponentFieldDesc : ICommand
             return 1;
         }
 
-        var fieldName = args[1];
-        var fieldDesc = args[2];
+        bool replace = false;
 
-        return UpdateComponentPages(
+        if (replacedescriptions.ToLower().Equals("true"))
+        {
+            replace = true;
+        }
+
+        if (args.Length.IsEven())
+        {
+            return UpdateComponentPages(
             context,
             page => IsEligibleType(page.Type, baseType),
-            page => UpdatePageContent(page, fieldName, fieldDesc));
+            page => UpdatePageContent(page, args.ToList().GetRange(2, args.Length - 2), replace));
+        }
+        else
+        {
+            Console.WriteLine($"need pairs of field names and descriptions.");
+            return 1;
+        }
+
     }
 
-    private static BatchUpdatePageResult? UpdatePageContent(BatchUpdatePage page, string fieldName, string fieldDesc)
+    private static BatchUpdatePageResult? UpdatePageContent(BatchUpdatePage page, List<string> pairs, bool replace)
     {
         var fieldsTemplate = PageContentParser.GetTemplateInPage(page.Content, "Table ComponentFields");
         if (fieldsTemplate == null)
@@ -38,40 +53,31 @@ public sealed class SetComponentFieldDesc : ICommand
             return null;
         }
 
-        var syncdelegatesTemplate = PageContentParser.GetTemplateInPage(page.Content, "Table ComponentTriggers");
-        if (syncdelegatesTemplate == null)
-        {
-            Console.WriteLine($"Unable to find Table ComponentTriggers in page for {page.Name}");
-            return null;
-        }
+        string changes = $"update ";
 
         var fieldDescriptions = UpdateComponentPage.ParseTableFields(fieldsTemplate);
 
-        if (fieldDescriptions.TryGetValue(fieldName, out var existingDesc) && !IsEmptyFieldDesc(existingDesc))
+        foreach(var fields in pairs.SplitToGroups(2))
         {
-            Console.WriteLine($"Skipping field on {page.Name}: already has description");
-            return null;
+
+            if (fieldDescriptions.TryGetValue(fields[0], out var existingDesc) && !IsEmptyFieldDesc(existingDesc) && !replace)
+            {
+                Console.WriteLine($"Skipping field '{fields[0]}' on '{page.Name}': already has description");
+                continue;
+            }
+            fieldDescriptions[fields[0]] = fields[1];
+            changes += $"'{fields[0]}' description,";
         }
-
-        var syncdelegatesDescriptions = UpdateComponentPage.ParseTableFields(fieldsTemplate);
-
-        if (syncdelegatesDescriptions.TryGetValue(fieldName, out var existingDesc2) && !IsEmptyFieldDesc(existingDesc2))
-        {
-            Console.WriteLine($"Skipping field on {page.Name}: already has description");
-            return null;
-        }
-
-        fieldDescriptions[fieldName] = fieldDesc;
-
         var newContent = UpdateComponentPage.SpliceString(
             page.Content,
             fieldsTemplate.Range,
             FieldFormatter.MakeComponentFieldsTemplate(page.Type, fieldDescriptions));
 
+
         return new BatchUpdatePageResult
         {
             NewContent = newContent,
-            ChangeDescription = $"update '{fieldName}' description"
+            ChangeDescription = changes
         };
     }
 
