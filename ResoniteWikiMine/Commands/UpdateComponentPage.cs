@@ -183,7 +183,7 @@ public sealed class UpdateComponentPage : ICommand
         return CreateComponentPages.GetComponentCategory(type).Any(x => CategoryRelativeTo(x, category) != null);
     }
 
-    private static string? CategoryRelativeTo(string category, string categoryBase)
+    public static string? CategoryRelativeTo(string category, string categoryBase)
     {
         var splitA = category.Split('/');
         var splitB = categoryBase.Split('/', StringSplitOptions.RemoveEmptyEntries);

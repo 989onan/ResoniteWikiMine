@@ -10,10 +10,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Dapper"/>
-        <PackageReference Include="Microsoft.Data.Sqlite"/>
-        <PackageReference Include="DiffPlex"/>
-        <PackageReference Include="CXuesong.MW.MwParserFromScratch"/>
+        <PackageReference Include="Dapper" />
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="DiffPlex" />
+        <PackageReference Include="CXuesong.MW.MwParserFromScratch" />
         <PackageReference Include="JetBrains.Annotations" />
 
         <!-- Load dependencies for Resonite -->
@@ -21,5 +21,5 @@
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client.Core" />
     </ItemGroup>
 
-    <Import Project="../FrooxInclude.props"/>
+    <Import Project="../FrooxInclude.props" />
 </Project>

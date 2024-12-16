@@ -31,7 +31,7 @@ public static class ComponentBatchUpdater
             INNER JOIN main.page_content pc ON wcr.page = pc.id AND pc.slot = 'main'
             ORDER BY 1
             """);
-
+        Console.WriteLine(components.Count());
         foreach (var (name, fullname, content) in components)
         {
             var type = FrooxLoader.GetType(fullname);
@@ -49,11 +49,11 @@ public static class ComponentBatchUpdater
             if (!isEligible(pageObject))
                 continue;
 
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write("Component: ");
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(name);
-            Console.ResetColor();
+            // Console.ForegroundColor = ConsoleColor.Cyan;
+            //Console.Write("Component: ");
+            //Console.ForegroundColor = ConsoleColor.Green;
+            //Console.WriteLine(name);
+            //Console.ResetColor();
 
             try
             {
