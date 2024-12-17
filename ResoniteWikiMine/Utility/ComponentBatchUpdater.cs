@@ -32,9 +32,9 @@ public static class ComponentBatchUpdater
             ORDER BY 1
             """);
         Console.WriteLine(components.Count());
-        foreach (var (name, fullname, content) in components)
+        foreach (var (name, fullName, content) in components)
         {
-            var type = FrooxLoader.GetType(fullname);
+            var type = FrooxLoader.GetType(fullName);
             if (type == null)
             {
                 Console.WriteLine($"Unable to find .NET type for {name} ???");

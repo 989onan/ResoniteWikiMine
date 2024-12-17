@@ -84,20 +84,22 @@ public sealed partial class WikiComponentReport : ICommand
         SqliteConnection db,
         Dictionary<string, string[]> typeNamesInv)
     {
-        var candidates = new List<(string, MatchType)> { (componentType.Name, MatchType.Exact) };
+        var candidates = new List<(string, MatchType)>();
+        candidates.Add((componentType.Name, MatchType.Exact));
         if (typeNamesInv.TryGetValue(componentType.FullName!, out var oldNames))
         {
             foreach (var oldName in oldNames)
             {
-                candidates.Add((oldName.Split('.')[^1], MatchType.OldName));
+                candidates.Insert(0,(oldName.Split('.')[^1], MatchType.OldName));
             }
         }
 
         foreach (var (candidate, matchType) in candidates.ToArray())
         {
-            if (GetTypeWithoutGenericSuffix(candidate) is { } nonGeneric)
+            string? nonGeneric = GetTypeWithoutGenericSuffix(candidate);
+            if (nonGeneric != null)
             {
-                candidates.Add((nonGeneric, matchType == MatchType.Exact ? MatchType.NoGenericSuffix : MatchType.OldName));
+                candidates.Insert(0, (nonGeneric, matchType == MatchType.Exact ? MatchType.NoGenericSuffix : MatchType.OldName));
             }
         }
 

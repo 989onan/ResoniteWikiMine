@@ -28,23 +28,26 @@ public sealed class UpdateComponentPages : ICommand
         var prevContent = content;
         var changes = PageChanges.None;
 
-        //content = UpdateComponentFields(type, type.Name, content);
-        content = UpdateSyncDelegateFields(type, type.Name, content);
-        CheckChange(PageChanges.SyncDelegates);
-        //CheckChange(PageChanges.Fields);
-        //content = UpdateComponentPageCategories(type, type.Name, content);
-        //CheckChange(PageChanges.Categories);
+        content = UpdateComponentFields(type, type.Name, content);
+        CheckChange(PageChanges.Fields);
+        //content = UpdateSyncDelegateFields(type, type.Name, content);
+        //CheckChange(PageChanges.SyncDelegates);
+        content = UpdateComponentPageCategories(type, type.Name, content);
+        CheckChange(PageChanges.Categories);
 
 
 
-        if (changes == PageChanges.None)
+        if (changes == PageChanges.None || content.Equals(prevContent))
+        {
+            Console.WriteLine("no changes to \"" + type.Name + "\"");
             return null;
+        }
         else
         {
             var parser = new WikitextParser();
             var parsed = parser.Parse(content);
             var categories = CategoryHelper.GetCategories(parsed);
-            CategoryHelper.EnsureCategoryState(categories, "Category:ComponentStub", true);
+            CategoryHelper.EnsureCategoryState(categories, "Category:ComponentStubs", true);
             content = parsed.ToString();
             CheckChange(PageChanges.Categories);
         }

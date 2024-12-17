@@ -1,10 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-      <ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
-      <ResonitePath Condition="Exists('D:\SteamLibrary\steamapps\common\Resonite\')">D:\SteamLibrary\steamapps\common\Resonite\</ResonitePath>
-      <ResonitePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</ResonitePath>
-      <ResonitePath Condition="Exists('/mnt/LocalDisk2/SteamLibrary/steamapps/common/Resonite/')">/mnt/LocalDisk2/SteamLibrary/steamapps/common/Resonite/</ResonitePath>
-      <ResonitePath Condition="Exists('/mnt/LocalDisk2/SteamLibrary/steamapps/common/ResoniteWin/')">/mnt/LocalDisk2/SteamLibrary/steamapps/common/ResoniteWin/</ResonitePath>
+        <ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
+        <ResonitePath Condition="Exists('D:\SteamLibrary\steamapps\common\Resonite\')">D:\SteamLibrary\steamapps\common\Resonite\</ResonitePath>
+        <ResonitePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</ResonitePath>
+        <ResonitePath Condition="Exists('/mnt/LocalDisk2/SteamLibrary/steamapps/common/Resonite/')">/mnt/LocalDisk2/SteamLibrary/steamapps/common/Resonite/</ResonitePath>
+        <ResonitePath Condition="Exists('/mnt/LocalDisk2/SteamLibrary/steamapps/common/ResoniteWin/')">/mnt/LocalDisk2/SteamLibrary/steamapps/common/ResoniteWin/</ResonitePath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -32,16 +32,24 @@
             <HintPath>$(ResonitePath)\Resonite_Data\Managed\ProtoFluxBindings.dll</HintPath>
         </Reference>
 
-      <Reference Include="Rug.Osc">
-        <HintPath>$(ResonitePath)\Resonite_Data\Managed\Rug.Osc.dll</HintPath>
-      </Reference>
+        <Reference Include="Rug.Osc">
+            <HintPath>$(ResonitePath)\Resonite_Data\Managed\Rug.Osc.dll</HintPath>
+        </Reference>
 
-      <Reference Include="SkyFrost.Base">
-        <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.dll</HintPath>
-      </Reference>
+        <Reference Include="SkyFrost.Base">
+            <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.dll</HintPath>
+        </Reference>
 
-      <Reference Include="SkyFrost.Base.Models">
-        <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.Models.dll</HintPath>
-      </Reference>
+        <Reference Include="SkyFrost.Base.Models">
+            <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.Models.dll</HintPath>
+        </Reference>
+
+        <Reference Include="PhotonDust">
+            <HintPath>$(ResonitePath)\Resonite_Data\Managed\PhotonDust.dll</HintPath>
+        </Reference>
+
+        <Reference Include="System.Threading.Tasks.DataFlow">
+            <HintPath>$(ResonitePath)\Resonite_Data\Managed\System.Threading.Tasks.DataFlow.dll</HintPath>
+        </Reference>
     </ItemGroup>
 </Project>

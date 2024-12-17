@@ -30,16 +30,23 @@ public sealed class CreateComponentPages : ICommand
 
         db.Execute("DELETE FROM wiki_page_create_queue");
 
-        var toCreate = db.Query<(string fullName, string category)>(
-            "SELECT full_name, category FROM wiki_component_report WHERE page IS NULL ORDER BY 2, 1");
+        var toCreate = db.Query<(string name, string fullName, string category, string page)>(
+            "SELECT name, full_name, category, page FROM wiki_component_report ORDER BY 2, 1");
+
+        var pages = db.Query<(int id, string title)>(
+            "SELECT id, title FROM page");
+
+        var page_content = db.Query<(int id, string content)>(
+            "SELECT id, content FROM page_content");
 
         var lastCategory = "";
-        foreach (var (fullName, category) in toCreate)
+        foreach (var (name, fullName, category, page) in toCreate)
         {
             if (excludeCategory.Contains(category))
                 continue;
 
-            if (FrooxLoader.FindFrooxType(fullName) is not { } componentType)
+            Type? componentType = FrooxLoader.FindFrooxType(fullName);
+            if (componentType == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Unable to find type: {fullName}");
@@ -56,10 +63,41 @@ public sealed class CreateComponentPages : ICommand
             }
 
             var title = componentType.Name;
-            if (WikiComponentReport.GetTypeWithoutGenericSuffix(componentType.Name) is { } nonGeneric)
+            var text = "";
+            string? nonGeneric = WikiComponentReport.GetTypeWithoutGenericSuffix(fullName);
+            if (nonGeneric != null)
+            {
                 title = nonGeneric;
+                var h = pages.ToList().Find(o => o.title == GetNiceName(componentType));
+                var j = page_content.ToList().Find(o => h.id == o.id);
+                if (j.content != null)
+                {
+                    if (!j.content.Equals(""))
+                    {
+                        continue;
+                    }
+                }
+                db.Execute("INSERT INTO wiki_page_create_queue(title, text) VALUES (@Title, @Text)",
+                    new
+                    {
+                        Title = $"Component:{componentType.Name}",
+                        Text = $"#REDIRECT[[Component:{nonGeneric}]]"
+                    });
+                continue;
+            }
+            else
+            {
+                text = GenerateWikitext(componentType);
+
+            }
+            if (!page.Equals(""))
+            {
+                continue;
+            }
 
             title = $"Component:{title}";
+
+
 
             // God save me.
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -73,8 +111,6 @@ public sealed class CreateComponentPages : ICommand
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(")");
             Console.ResetColor();
-
-            var text = GenerateWikitext(componentType);
 
             db.Execute("INSERT INTO wiki_page_create_queue(title, text) VALUES (@Title, @Text)",
                 new
@@ -93,6 +129,7 @@ public sealed class CreateComponentPages : ICommand
     {
         var name = type.Name;
 
+
         var sb = new StringBuilder();
         sb.AppendLine($$$"""
             {{Infobox Component
@@ -101,15 +138,11 @@ public sealed class CreateComponentPages : ICommand
             }}
             {{stub}}
 
-            == Usage ==
+            == Fields ==
             {{Table ComponentFields
             }}
 
-            == Sync Delegates ==
-            {{Table ComponentTriggers
-            }}
-
-            == Behavior ==
+            == Usage ==
 
             == Examples ==
 
