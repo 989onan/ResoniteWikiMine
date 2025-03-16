@@ -29,8 +29,9 @@ public sealed class UpdateComponentPage : ICommand
         var changes = PageChanges.None;
 
         content = UpdateComponentFields(type, type.Name, content);
-        content = UpdateSyncDelegateFields(type, type.Name, content);
         CheckChange(PageChanges.Fields);
+        content = UpdateSyncDelegateFields(type, type.Name, content);
+        CheckChange(PageChanges.SyncDelegates);
         content = UpdateComponentPageCategories(type, type.Name, content);
         CheckChange(PageChanges.Categories);
 
@@ -42,17 +43,26 @@ public sealed class UpdateComponentPage : ICommand
             NewContent = content, ChangeDescription = $"update {changes.ToString()}"
         };
 
+
         void CheckChange(PageChanges change)
         {
             if (prevContent != content)
             {
-                prevContent = content;
+                var parser = new WikitextParser();
+                var parsed = parser.Parse(content);
+                var categories = CategoryHelper.GetCategories(parsed);
                 changes |= change;
+                if(parsed.ToString() != content)
+                {
+                    changes |= PageChanges.Categories;
+                }
+                content = parsed.ToString();
+                prevContent = content;
             }
         }
     }
 
-    private static string UpdateComponentFields(Type type, string name, string content)
+    public static string UpdateComponentFields(Type type, string name, string content)
     {
         var fieldsTemplate = PageContentParser.GetTemplateInPage(content, "Table ComponentFields");
         if (fieldsTemplate == null)
@@ -69,24 +79,60 @@ public sealed class UpdateComponentPage : ICommand
             FieldFormatter.MakeComponentFieldsTemplate(type, fieldDescriptions));
     }
 
-    private static string UpdateSyncDelegateFields(Type type, string name, string content)
+    public static string UpdateSyncDelegateFields(Type type, string name, string content)
     {
         var fieldsTemplate = PageContentParser.GetTemplateInPage(content, "Table ComponentTriggers");
+        var components_Template = PageContentParser.GetTemplateInPage(content, "Table ComponentFields");
         if (fieldsTemplate == null)
         {
-            Console.WriteLine($"Unable to find Table ComponentTriggers in page for {name}");
-            return content;
+            if (components_Template == null)
+            {
+                Console.WriteLine($"Unable to FIND Table ComponentTriggers OR ComponentFields in page for {name}");
+                return content;
+            }
         }
+        var fieldDescriptions = ParseTableFields(PageContentParser.GetTemplateInPage("{{Table ComponentTriggers\n}}", "Table ComponentTriggers"));
 
-        var fieldDescriptions = ParseTableFields(fieldsTemplate);
+        if (fieldsTemplate != null)
+        {
+            fieldDescriptions = ParseTableFields(fieldsTemplate);
+        }
+        string table = SyncDelegateFormatter.MakeSyncDelegatesTemplate(type, fieldDescriptions);
+        //Console.WriteLine(table);
+        if (fieldsTemplate == null && components_Template != null)
+        {
+            if (table == "")
+            {
+                return content.Replace("== Sync Delegates ==", "").Replace("== Special Functions ==", "").Replace("=== Special Functions ===", "").Replace("== Sync Methods ==", "");
 
-        return SpliceString(
-            content,
-            fieldsTemplate.Range,
-            SyncDelegateFormatter.MakeSyncDelegatesTemplate(type, fieldDescriptions));
+            }
+            else
+            {
+                return SpliceString(
+                content,
+                new Range(components_Template.Range.End, components_Template.Range.End),
+                "\n\n== Sync Delegates ==\n" + table);
+            }
+        }
+        if (fieldsTemplate != null)
+        {
+            if (table == "")
+            {
+                return SpliceString(
+                    content,
+                    fieldsTemplate.Range,
+                    "").Replace("== Sync Delegates ==", "").Replace("== Special Functions ==", "").Replace("=== Special Functions ===", "").Replace("== Sync Methods ==", "");
+
+            }
+            return SpliceString(
+                content,
+                fieldsTemplate.Range,
+                table);
+        }
+        return content;
     }
 
-    private static string UpdateComponentPageCategories(Type type, string name, string content)
+    public static string UpdateComponentPageCategories(Type type, string name, string content)
     {
         var parser = new WikitextParser();
         var parsed = parser.Parse(content);
@@ -95,7 +141,8 @@ public sealed class UpdateComponentPage : ICommand
         if (categories.Categories.Count == 0)
         {
             Console.WriteLine($"Unable to find any categories in page for {name}!");
-            return content;
+            parsed = parser.Parse(content + "\n[[Category:ComponentStubs]]");
+            categories = CategoryHelper.GetCategories(parsed);
         }
 
         var niceName = CreateComponentPages.GetNiceName(type);
@@ -145,7 +192,7 @@ public sealed class UpdateComponentPage : ICommand
         return parsed.ToString();
     }
 
-    private static void UpdateComponentCategoryCategories(Type type, CategoryHelper.CategoryData categories,
+    public static void UpdateComponentCategoryCategories(Type type, CategoryHelper.CategoryData categories,
         string niceName)
     {
         var expectedCategories = new HashSet<string>();
@@ -178,7 +225,7 @@ public sealed class UpdateComponentPage : ICommand
         }
     }
 
-    private static bool IsInCategory(Type type, string category)
+    public static bool IsInCategory(Type type, string category)
     {
         return CreateComponentPages.GetComponentCategory(type).Any(x => CategoryRelativeTo(x, category) != null);
     }
@@ -194,7 +241,7 @@ public sealed class UpdateComponentPage : ICommand
         return string.Join('/', splitA.Skip(splitB.Length));
     }
 
-    private static (bool types, bool enums) CheckHasNestedTypes(Type type)
+    public static (bool types, bool enums) CheckHasNestedTypes(Type type)
     {
         var allTypes = FieldFormatter.EnumerateSyncFields(type)
             .SelectMany(entry => TypeHelper.GenericTypesRecursive(entry.Type));
@@ -235,6 +282,10 @@ public sealed class UpdateComponentPage : ICommand
 
     public static string SpliceString(string text, Range range, string replacement)
     {
+        if(range.Start.Value == range.End.Value)
+        {
+            return text.Insert(range.Start.Value, replacement);
+        }
         return string.Concat(
             text.AsSpan(0, range.Start.GetOffset(text.Length)),
             replacement,
@@ -247,5 +298,6 @@ public sealed class UpdateComponentPage : ICommand
         None = 0,
         Fields = 1 << 0,
         Categories = 1 << 1,
+        SyncDelegates = 1 << 2,
     }
 }

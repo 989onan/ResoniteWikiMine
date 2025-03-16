@@ -219,9 +219,19 @@ public static class FieldFormatter
         var sb = new StringBuilder();
         // If this is a nested type of the type we're creating the page for,
         // we generate an internal anchor link instead.
-        var typePage = IsNestedType(type, containingType)
-            ? $"#{SimpleTypeName(type)}"
-            : $"{GetTypeNamespace(type)}{SimpleTypeName(type)}";
+        var typePage = "";
+        if (IsNestedType(type, containingType))
+        {
+            typePage = ($"#{SimpleTypeName(type)}");
+        }
+        else if (type.DeclaringType != null && GetTypeNamespace(type.DeclaringType).Equals("Component:"))
+        {
+            typePage = ($"{GetTypeNamespace(type.DeclaringType)}{SimpleTypeName(type.DeclaringType)}#{SimpleTypeName(type)}");
+        }
+        else
+        {
+            typePage = ($"{GetTypeNamespace(type)}{SimpleTypeName(type)}");
+        }
         sb.Append($"[[{typePage}|{SimpleTypeName(type)}]]");
 
         if (type.IsConstructedGenericType)
@@ -252,9 +262,21 @@ public static class FieldFormatter
         var sb = new StringBuilder();
         // If this is a nested type of the type we're creating the page for,
         // we generate an internal anchor link instead.
-        var typePage = IsNestedType(type, containingType)
-            ? $"#{SimpleTypeName(type)}"
-            : $"{GetTypeNamespace(type)}{SimpleTypeName(type)}";
+        // If it's a nested type of another page, anchor to the other page's link
+        string typePage = "";
+        if (IsNestedType(type, containingType))
+        {
+            typePage = ($"#{SimpleTypeName(type)}");
+        }
+        else if (type.DeclaringType != null && GetTypeNamespace(type.DeclaringType).Equals("Component:"))
+        {
+            typePage = ($"{GetTypeNamespace(type.DeclaringType)}{SimpleTypeName(type.DeclaringType)}#{SimpleTypeName(type)}");
+        }
+        else
+        {
+            typePage = ($"{GetTypeNamespace(type)}{SimpleTypeName(type)}");
+        }
+
         sb.Append($"[[{typePage}|{SimpleTypeName(type)}]]");
 
         return sb.ToString();

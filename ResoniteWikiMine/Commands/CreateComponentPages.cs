@@ -90,9 +90,12 @@ public sealed class CreateComponentPages : ICommand
                 text = GenerateWikitext(componentType);
 
             }
-            if (!page.Equals(""))
+            if(page != null)
             {
-                continue;
+                if (!page.Equals(""))
+                {
+                    continue;
+                }
             }
 
             title = $"Component:{title}";
@@ -136,6 +139,7 @@ public sealed class CreateComponentPages : ICommand
             |Image={{{name}}}Component.png
             |Name={{{GetNiceName(type)}}}
             }}
+            The '''{{{GetNiceName(type)}}}''' component
             {{stub}}
 
             == Fields ==

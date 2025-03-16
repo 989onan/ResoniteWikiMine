@@ -86,13 +86,6 @@ public sealed partial class WikiComponentReport : ICommand
     {
         var candidates = new List<(string, MatchType)>();
         candidates.Add((componentType.Name, MatchType.Exact));
-        if (typeNamesInv.TryGetValue(componentType.FullName!, out var oldNames))
-        {
-            foreach (var oldName in oldNames)
-            {
-                candidates.Insert(0,(oldName.Split('.')[^1], MatchType.OldName));
-            }
-        }
 
         foreach (var (candidate, matchType) in candidates.ToArray())
         {

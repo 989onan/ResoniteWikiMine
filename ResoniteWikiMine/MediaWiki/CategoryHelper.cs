@@ -1,4 +1,4 @@
-﻿using MwParserFromScratch.Nodes;
+using MwParserFromScratch.Nodes;
 
 namespace ResoniteWikiMine.MediaWiki;
 
@@ -33,6 +33,7 @@ public static class CategoryHelper
     {
         var newLine = new PlainText("\n");
         data.Categories[^1].InsertAfter(newLine);
+
         newLine.InsertAfter(category);
 
         data.Categories.Add(category);
