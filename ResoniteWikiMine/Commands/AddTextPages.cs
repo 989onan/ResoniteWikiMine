@@ -20,45 +20,30 @@ public sealed class AddTextPages : ICommand
         return UpdateAllPages(
             context,
             _ => true,
-            page => GenerateNewPageContent(page.Type, page.Content, args));
+            page => GenerateNewPageContent(page.Name, page.Content, args));
     }
 
-    public static BatchUpdatePageResult? GenerateNewPageContent(Type type, string content, string[] args)
+    public static BatchUpdatePageResult? GenerateNewPageContent(string pagename, string content, string[] args)
     {
         var prevContent = content;
         var changes = PageChanges.None;
 
-        Dictionary<string, string> replace = new();
-        string first = "";
-        for (var i = 0; i < args.Length; i++)
+        // Console.WriteLine("Checking page"+pagename);
+
+        if (pagename.Contains(args[1]) && !content.Contains(args[0]) && args.Skip(2).All(o=>(
+        !pagename.Contains(o)
+        )))
         {
-            if (i % 2 == 0)
-            {
-                first = args[i];
-            }
-            else
-            {
-                replace.Add(first, args[i]);
-                first = "";
-            }
+            Console.WriteLine("Added text");
+            content = content.Insert(0, args[0]);
         }
 
-        if (!first.Equals("")) return null;
-
-        foreach (var str in replace) {
-            if (content.Contains(str.Key))
-            {
-                content = content.Replace(str.Key, str.Value);
-            }
-        }
-
-        CheckChange(PageChanges.Replace);
+        CheckChange(PageChanges.AddText);
         if (changes == PageChanges.None) return null;
-
 
         return new BatchUpdatePageResult
         {
-            NewContent = content, ChangeDescription = $"update {changes.ToString()}"
+            NewContent = content, ChangeDescription = $"Added " + args[0]
         };
 
         void CheckChange(PageChanges change)
@@ -78,6 +63,6 @@ public sealed class AddTextPages : ICommand
     public enum PageChanges
     {
         None = 0,
-        Replace = 1 << 0
+        AddText = 1 << 0
     }
 }

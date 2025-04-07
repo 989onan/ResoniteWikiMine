@@ -14,8 +14,12 @@ public class UpdatePageSchema : ICommand
 
         db.Execute("DROP VIEW IF EXISTS wiki_all_update_report_view");
         db.Execute("DROP TABLE IF EXISTS wiki_all_update_report");
+
         await db.ExecuteAsync("DROP VIEW IF EXISTS wiki_component_report_view");
-        await db.ExecuteAsync("DROP VIEW IF EXISTS wiki_all_page_report");
+        await db.ExecuteAsync("DROP VIEW IF EXISTS wiki_all_report_view");
+
+        await db.ExecuteAsync("DROP VIEW IF EXISTS wiki_all_report");
+
         await db.ExecuteAsync("DROP TABLE IF EXISTS wiki_component_report");
         await db.ExecuteAsync("DROP TABLE IF EXISTS page_content");
         await db.ExecuteAsync("DROP TABLE IF EXISTS page");

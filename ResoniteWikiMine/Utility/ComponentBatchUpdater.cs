@@ -25,26 +25,20 @@ public static class ComponentBatchUpdater
 
         EnsureDbTables(db);
 
-        var components = db.Query<(string name, string fullName, string content)>("""
+        var components = db.Query<(string name, string content)>("""
             SELECT
-                wcr.name, wcr.full_name, pc.content
-            FROM wiki_all_page_report wcr
-            INNER JOIN main.page_content pc ON wcr.page = pc.id AND pc.slot = 'main'
+                wcr.name, pc.content
+            FROM wiki_all_report wcr
+            INNER JOIN main.page_all_content pc ON wcr.page = pc.id AND pc.slot = 'main'
             ORDER BY 1
             """);
         Console.WriteLine(components.Count());
-        foreach (var (name, fullName, content) in components)
+        foreach (var (name, content) in components)
         {
-            var type = FrooxLoader.GetType(fullName);
-            if (type == null)
-            {
-                Console.WriteLine($"Unable to find .NET type for {name} ???");
-                continue;
-            }
 
             var pageObject = new BatchUpdatePage
             {
-                Name = name, Type = type, Content = content
+                Name = name, Type = null, Content = content
             };
 
             if (!isEligible(pageObject))
@@ -65,7 +59,7 @@ public static class ComponentBatchUpdater
                 var diff = DiffFormatter.GenerateDiff(content, newContent.NewContent);
 
                 db.Execute(
-                    "INSERT INTO wiki_all_page_update_report (name, new_text, diff, changes_text) " +
+                    "INSERT INTO wiki_all_update_report (name, new_text, diff, changes_text) " +
                     "VALUES (@Name, @NewContent, @Diff, @ChangesText)",
                     new
                     {
@@ -260,6 +254,28 @@ public static class ComponentBatchUpdater
             FROM wiki_component_update_report wcur
             INNER JOIN wiki_component_report wcr ON wcur.name = wcr.name
             INNER JOIN page_content pc ON pc.id = wcr.page
+            WHERE wcur.diff != ''
+            ORDER BY 1
+            """);
+
+
+        db.Execute("DROP VIEW IF EXISTS wiki_all_update_report_view");
+        db.Execute("DROP TABLE IF EXISTS wiki_all_update_report");
+        db.Execute("""
+            CREATE TABLE wiki_all_update_report (
+                name TEXT PRIMARY KEY NOT NULL REFERENCES wiki_all_report(name),
+                new_text TEXT NOT NULL,
+                changes_text TEXT NOT NULL,
+                diff TEXT NOT NULL
+            );
+            """);
+
+        db.Execute("""
+            CREATE VIEW wiki_all_update_report_view AS
+            SELECT wcur.name, wcr.category, pc.content old_text, wcur.new_text, wcur.changes_text, wcur.diff
+            FROM wiki_all_update_report wcur
+            INNER JOIN wiki_all_report wcr ON wcur.name = wcr.name
+            INNER JOIN page_all_content pc ON pc.id = wcr.page
             WHERE wcur.diff != ''
             ORDER BY 1
             """);

@@ -14,7 +14,8 @@ public class ImportAllPageList : ICommand
         "Help",
         "Component",
         "ProtoFlux",
-        "Type"
+        "Type",
+        ""
     };
 
     public async Task<int> Run(WorkContext context, string[] args)
@@ -38,7 +39,6 @@ public class ImportAllPageList : ICommand
             $"?action=query&generator=allpages&gapnamespace={i.Item1}&format=json&prop=revisions&rvslots=main&rvprop=content|ids");
 
         }
-        Console.WriteLine("Importing by Components category");
 
 
         await transaction.CommitAsync();
@@ -60,7 +60,6 @@ public class ImportAllPageList : ICommand
                 await db.ExecuteAsync(
                     "INSERT OR REPLACE INTO page_all (id, namespace, title) VALUES (@PageId, @NamespaceId, @Title)",
                     page);
-                
                 await db.ExecuteAsync(
                     "INSERT OR REPLACE INTO page_all_content (id, slot, model, format, content, revision_id) VALUES (@PageId, 'main', @ContentModel, @ContentFormat, @Content, @RevisionId)",
                     new
