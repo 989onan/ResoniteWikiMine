@@ -6,6 +6,85 @@ namespace ResoniteWikiMine.Utility;
 
 public static class ComponentBatchUpdater
 {
+
+    public static int UpdateAllPages(
+        WorkContext context,
+        Func<BatchUpdatePage, bool> isEligible,
+        Func<BatchUpdatePage, BatchUpdatePageResult?> processor)
+    {
+        var db = context.DbConnection;
+        using var transaction = db.BeginTransaction();
+
+        var prevRet = WikiComponentReport.RunCoreTransacted(context);
+        if (!prevRet)
+            return 1;
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("Start batch all update");
+        Console.ResetColor();
+
+        EnsureDbTables(db);
+
+        var components = db.Query<(string name, string fullName, string content)>("""
+            SELECT
+                wcr.name, wcr.full_name, pc.content
+            FROM wiki_all_page_report wcr
+            INNER JOIN main.page_content pc ON wcr.page = pc.id AND pc.slot = 'main'
+            ORDER BY 1
+            """);
+        Console.WriteLine(components.Count());
+        foreach (var (name, fullName, content) in components)
+        {
+            var type = FrooxLoader.GetType(fullName);
+            if (type == null)
+            {
+                Console.WriteLine($"Unable to find .NET type for {name} ???");
+                continue;
+            }
+
+            var pageObject = new BatchUpdatePage
+            {
+                Name = name, Type = type, Content = content
+            };
+
+            if (!isEligible(pageObject))
+                continue;
+
+            // Console.ForegroundColor = ConsoleColor.Cyan;
+            //Console.Write("Component: ");
+            //Console.ForegroundColor = ConsoleColor.Green;
+            //Console.WriteLine(name);
+            //Console.ResetColor();
+
+            try
+            {
+                var newContent = processor(pageObject);
+                if (newContent == null || newContent.NewContent == pageObject.Content)
+                    continue;
+
+                var diff = DiffFormatter.GenerateDiff(content, newContent.NewContent);
+
+                db.Execute(
+                    "INSERT INTO wiki_all_page_update_report (name, new_text, diff, changes_text) " +
+                    "VALUES (@Name, @NewContent, @Diff, @ChangesText)",
+                    new
+                    {
+                        Name = name,
+                        newContent.NewContent,
+                        Diff = diff,
+                        ChangesText = newContent.ChangeDescription
+                    });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error while processing {name}: {e}");
+            }
+        }
+
+        transaction.Commit();
+
+        return 0;
+    }
     public static int UpdateComponentPages(
         WorkContext context,
         Func<BatchUpdatePage, bool> isEligible,

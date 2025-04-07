@@ -145,7 +145,7 @@ public static class FieldFormatter
             // We don't need to use Template:RootFieldType here.
             // If we can let Template:Table ComponentFields handle it, we pass the name DIRECTLY.
             // Else we use advanced mode but still format the type manually.
-            if (IsNonDefaultNamespace(contained) || contained.IsGenericType || contained.IsGenericTypeParameter || IsNestedType(contained, containingType))
+            if (IsNonDefaultNamespace(contained) || contained.IsGenericType || contained.IsGenericTypeParameter || IsNestedTypeNonStandard(contained))
             {
                 // We bold ourselves, since nobody else will.
                 return ($"'''{MakeDisplayType(contained, containingType)}'''", true);
@@ -172,6 +172,14 @@ public static class FieldFormatter
         }
     }
 
+    public static bool IsNestedTypeNonStandard(Type type)
+    {
+        if (type.IsNested)
+        {
+            return IsNonDefaultNamespace(type.DeclaringType);
+        }
+        return false;
+    }
 
     public static bool IsNestedType(Type type, Type? containingType)
     {
@@ -232,7 +240,15 @@ public static class FieldFormatter
         {
             typePage = ($"{GetTypeNamespace(type)}{SimpleTypeName(type)}");
         }
-        sb.Append($"[[{typePage}|{SimpleTypeName(type)}]]");
+
+        if (type.DeclaringType != null && GetTypeNamespace(type.DeclaringType).Equals("Component:"))
+        {
+            sb.Append($"[[{typePage}|{SimpleTypeName(type.DeclaringType)}.{SimpleTypeName(type)}]]");
+        }
+        else
+        {
+            sb.Append($"[[{typePage}|{SimpleTypeName(type)}]]");
+        }
 
         if (type.IsConstructedGenericType)
         {

@@ -91,11 +91,11 @@ public sealed class UpdateComponentPage : ICommand
                 return content;
             }
         }
-        var fieldDescriptions = ParseTableFields(PageContentParser.GetTemplateInPage("{{Table ComponentTriggers\n}}", "Table ComponentTriggers"));
+        var fieldDescriptions = ParseTableMethods(PageContentParser.GetTemplateInPage("{{Table ComponentTriggers\n}}", "Table ComponentTriggers"));
 
         if (fieldsTemplate != null)
         {
-            fieldDescriptions = ParseTableFields(fieldsTemplate);
+            fieldDescriptions = ParseTableMethods(fieldsTemplate);
         }
         string table = SyncDelegateFormatter.MakeSyncDelegatesTemplate(type, fieldDescriptions);
         //Console.WriteLine(table);
@@ -273,6 +273,22 @@ public sealed class UpdateComponentPage : ICommand
         {
             var name = template.PositionalArguments[i];
             var description = template.PositionalArguments[i + 2].TrimEnd();
+            if (!fields.TryAdd(name, description))
+                Console.WriteLine($"Duplicate property: {name}");
+        }
+
+        return fields;
+    }
+
+    public static Dictionary<string, string> ParseTableMethods(PageContentParser.TemplateMatch template)
+    {
+        var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        var args = template.PositionalArguments;
+        for (var i = 0; i < args.Length; i += 4)
+        {
+            var name = template.PositionalArguments[i];
+            var description = template.PositionalArguments[i + 3].TrimEnd();
             if (!fields.TryAdd(name, description))
                 Console.WriteLine($"Duplicate property: {name}");
         }

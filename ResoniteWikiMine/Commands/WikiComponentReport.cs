@@ -33,8 +33,12 @@ public sealed partial class WikiComponentReport : ICommand
         db.Execute("""
             DROP TABLE IF EXISTS wiki_component_create;
             DROP TABLE IF EXISTS wiki_component_update_report;
+
             DROP VIEW IF EXISTS wiki_component_report_view;
             DROP TABLE IF EXISTS wiki_component_report;
+
+            DROP VIEW IF EXISTS wiki_all_update_report_view;
+            DROP TABLE IF EXISTS wiki_all_update_report;
 
             CREATE TABLE wiki_component_report (
                 name TEXT PRIMARY KEY NOT NULL,
@@ -48,6 +52,21 @@ public sealed partial class WikiComponentReport : ICommand
             SELECT
                 report.name, report.full_name, report.category, page.title, report.match_type
             FROM wiki_component_report report
+            LEFT JOIN page ON page.id = report.page
+
+
+            CREATE TABLE wiki_all_component_report (
+                name TEXT PRIMARY KEY NOT NULL,
+                full_name TEXT UNIQUE,
+                category TEXT NOT NULL,
+                page INT NULL REFERENCES page(id),
+                match_type TEXT NULL
+            );
+            
+            CREATE VIEW wiki_all_component_report_view AS
+            SELECT
+                report.name, report.full_name, report.category, page.title, report.match_type
+            FROM wiki_all_component_report report
             LEFT JOIN page ON page.id = report.page
             """);
 

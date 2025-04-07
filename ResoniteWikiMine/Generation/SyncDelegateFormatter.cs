@@ -1,8 +1,10 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime;
 using System.Text;
 using Elements.Core;
 using FrooxEngine;
+using FrooxEngine.Undo;
 using Microsoft.Extensions.Primitives;
 
 namespace ResoniteWikiMine.Generation;
@@ -53,14 +55,10 @@ public class SyncDelegateFormatter
         {
             return;
         }
-        
+
         var list = array.ToArray();
         for (var i = 0; i < list.Length; i++)
         {
-            if (type == typeof(FrooxEngine.Skybox))
-            {
-                Console.WriteLine("Skybox2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            }
             //Console.WriteLine("creating sync delegate entry");
             var field = list[i];
             var desc = GetDescription(field, descriptions);
@@ -68,6 +66,14 @@ public class SyncDelegateFormatter
 
             sb.Append($"|{FormatName(field)}");
             sb.Append($"|{fieldType}");
+            if ((field.method.methodType == typeof(Delegate) || !field.method.method.IsPublic))
+            {
+                sb.Append("|true");
+            }
+            else
+            {
+                sb.Append("|false");
+            }
             sb.Append($"|{desc}");
             sb.Append('\n');
         }
@@ -78,26 +84,19 @@ public class SyncDelegateFormatter
         if (descriptions == null)
             return "";
 
-        if (descriptions.TryGetValue(field.Name + "()", out var desc2) && !string.IsNullOrWhiteSpace(desc2))
-        {
-            //Console.WriteLine(field.Name + "()" + " on " + field.method.method.DeclaringType?.Name + " is the name of this sync delegate.");
-            return desc2;
-        }
-        if (descriptions.TryGetValue(field.Name, out var desc5) && !string.IsNullOrWhiteSpace(desc5))
-            return desc5;
-        if (descriptions.TryGetValue(FormatName(field), out var desc) && !string.IsNullOrWhiteSpace(desc))
-            return desc;
+        if (descriptions.TryGetValue(FormatName(field), out var desc0) && !string.IsNullOrWhiteSpace(desc0))
+            return desc0;
+        if (descriptions.TryGetValue(FormatNameOld1(field), out var desc3) && !string.IsNullOrWhiteSpace(desc3))
+            return desc3;
 
         if (field.OldNames != null)
         {
             foreach (var oldName in field.OldNames)
             {
-                if (descriptions.TryGetValue(field.Name + "()", out var desc3) && !string.IsNullOrWhiteSpace(desc3))
-                    return desc3;
-                if (descriptions.TryGetValue(field.Name, out var desc6) && !string.IsNullOrWhiteSpace(desc6))
-                    return desc6;
-                if (descriptions.TryGetValue(FormatName(field), out var desc4) && !string.IsNullOrWhiteSpace(desc4))
-                    return desc4;
+                if (descriptions.TryGetValue(FormatName(field).Replace(field.Name, oldName), out var desc1) && !string.IsNullOrWhiteSpace(desc1))
+                    return desc1;
+                if (descriptions.TryGetValue (FormatNameOld1(field).Replace(field.Name, oldName), out var desc2) && !string.IsNullOrWhiteSpace(desc2))
+                    return desc2;
             }
         }
 
@@ -157,28 +156,6 @@ public class SyncDelegateFormatter
     //format the sync delegate arguments into a list contained within '<' and '>' symbols
     public static (string typeColumn, bool advanced) FormatFieldType(SyncDelegateEntry type)
     {
-        var sb = new StringBuilder();
-        var str = FieldFormatter.MakeDisplayTypeNoNesting(type.method.methodType, null);
-        sb.Append(str);
-        if (type.Arguments.Count > 0)
-        {
-            sb.Append("&lt;");
-            foreach (var keyvalue in type.Arguments)
-            {
-                var str2 = FieldFormatter.MakeDisplayType(keyvalue.Item1, null);
-                sb.Append(str2);
-                sb.Append(": ");
-                sb.Append(keyvalue.Item2);
-                sb.Append(", ");
-            }
-            sb.Remove(sb.Length - 2, 2);
-            sb.Append("&gt;");
-        }
-        sb.Append($" -> {FieldFormatter.MakeDisplayType(type.method.method.ReturnType, null)}");
-        if ((type.method.methodType == typeof(Delegate) || !type.method.method.IsPublic))
-        {
-            sb.Append(" : HIDDEN METHOD");
-        }
 
         //if (type.Name == "SetActive" && type.method.method.DeclaringType == typeof(FrooxEngine.Skybox))
         //{
@@ -186,29 +163,18 @@ public class SyncDelegateFormatter
         //}
 
 
-        return (sb.ToString(), true);
+        return (FieldFormatter.MakeDisplayType(Helper.ClassifyDelegate(type.method.method), null), true);
     }
 
     public static string FormatName(SyncDelegateEntry type)
     {
-        var sb = new StringBuilder();
-        var str = type.Name;
-        sb.Append(str);
-        sb.Append("(");
-        if (type.Arguments.Count > 0)
-        {
-            foreach (var keyvalue in type.Arguments)
-            {
-                var str2 = keyvalue.Item1.GetNiceName();
-                sb.Append(str2);
-                sb.Append(", ");
-            }
-            sb.Remove(sb.Length - 2, 2);
-        }
-        sb.Append(")");
+        return type.Name + ":" + FieldFormatter.MakeDisplayType(Helper.ClassifyDelegate(type.method.method), null);
+    }
 
 
-        return sb.ToString();
+    public static string FormatNameOld1(SyncDelegateEntry type)
+    {
+        return type.Name + "" + FieldFormatter.MakeDisplayType(Helper.ClassifyDelegate(type.method.method), null);
     }
 
     public sealed record SyncDelegateEntry(
@@ -217,5 +183,132 @@ public class SyncDelegateFormatter
         List<Tuple<Type, string>> Arguments,
         List<string>? OldNames = null
         );
+    //shamefully stolen from Art0007i's code
+
+    public struct MethodArgs
+    {
+        public Type returnType;
+        public Type[] argumentTypes;
+
+        public MethodArgs(Type returnType, Type[] argumentTypes)
+        {
+            this.returnType = returnType;
+            this.argumentTypes = argumentTypes;
+        }
+        public MethodArgs(params Type[] argumentTypes)
+        {
+            this.returnType = typeof(void);
+            this.argumentTypes = argumentTypes;
+        }
+        public MethodArgs(MethodInfo source)
+        {
+            this.returnType = source.ReturnType;
+            this.argumentTypes = source.GetParameters().Select((f) => f.ParameterType).ToArray();
+        }
+
+        public override string ToString()
+        {
+            var rett = returnType == null ? "void" : returnType.Name;
+            var args = string.Join(", ", argumentTypes.Select(t => t.Name));
+            return $"{rett} ({args})";
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is MethodArgs y)
+            {
+                var x = this;
+                if (x.returnType != y.returnType) return false;
+                if (x.argumentTypes.Length != y.argumentTypes.Length) return false;
+                for (int i = 0; i < x.argumentTypes.Length; i++)
+                {
+                    if (x.argumentTypes[i] != y.argumentTypes[i]) return false;
+                }
+                return true;
+            }
+            return base.Equals(obj);
+        }
+        public static bool operator ==(MethodArgs lhs, MethodArgs rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+        public static bool operator !=(MethodArgs lhs, MethodArgs rhs)
+        {
+            return !lhs.Equals(rhs);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17; // Start with a prime number
+
+                // Combine the hash code of the returnType
+                hash = hash * 23 + (returnType != null ? returnType.GetHashCode() : 0);
+
+                // Combine the hash codes of each argument type in the array
+                if (argumentTypes != null)
+                {
+                    foreach (var argType in argumentTypes)
+                    {
+                        hash = hash * 23 + (argType != null ? argType.GetHashCode() : 0);
+                    }
+                }
+
+                return hash;
+            }
+        }
+    }
+    internal class Helper
+    {
+        public static Dictionary<MethodArgs, Type> argumentLookup = new()
+    {
+        { new(typeof(IButton), typeof(ButtonEventData)), typeof(ButtonEventHandler) }, // used literally everywhere lol
+        { new(typeof(bool), new Type[] {typeof(IGrabbable), typeof(Grabber) }), typeof(GrabCheck) }, // Used in Grabbable.UserRootGrabCheck
+        //{ new(typeof(bool), new Type[] {} ), typeof(Func<bool>) }, // Used in SlotInspector.IsTargetEmpty
+        //{ new(typeof(TextEditor)), typeof(Action<TextEditor>) }, // Used in FieldEditor.EditingFinished, FieldEditor.EditingChanged, FieldEditor.EditingStarted
+        { new(typeof(ITouchable), typeof(TouchEventInfo).MakeByRefType()), typeof(TouchEvent) },
+        { new(typeof(ITouchable), new Type[] {typeof(RelayTouchSource), typeof(float3).MakeByRefType(), typeof(float3).MakeByRefType(), typeof(float3).MakeByRefType(), typeof(bool).MakeByRefType()}), typeof(TouchableGetter) },
+        { new(typeof(SlotGizmo), typeof(SlotGizmo)), typeof(SlotGizmo.SlotGizmoReplacement) },
+        { new(typeof(LegacyWorldItem)), typeof(LegacyWorldItemAction) },
+        //{ new(typeof(void), new Type[] {}), typeof(Action) }, // Used in WorldCloseDialog.Close 
+        // Action<LocomotionController> // used in somewhere?
+
+    };
+
+        public static Type ClassifyDelegate(MethodInfo m)
+        {
+            if (argumentLookup.TryGetValue(new(m), out var t))
+            {
+                return t;
+            }
+            var p = m.GetParameters().Select(para => para.ParameterType).ToArray();
+            if (p.Length == 3 && p[0] == typeof(IButton) && p[1] == typeof(ButtonEventData))
+            {
+                return typeof(ButtonEventHandler<>).MakeGenericType(p[2]);
+            }
+            return GetFuncOrAction(m, p);
+
+        }
+
+        public static Type GetFuncOrAction(MethodInfo m)
+        {
+            var p = m.GetParameters().Select(para => para.ParameterType).ToArray();
+            return GetFuncOrAction(m, p);
+        }
+
+        public static Type GetFuncOrAction(MethodInfo m, Type[] p)
+        {
+            if (m.ReturnType == typeof(void))
+            {
+                return Expression.GetActionType(p);
+            }
+            else
+            {
+                p = p.Concat(new[] { m.ReturnType }).ToArray();
+                return Expression.GetFuncType(p);
+            }
+        }
+    }
 }
 
