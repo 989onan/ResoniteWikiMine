@@ -59,7 +59,7 @@ public sealed partial class WikiComponentReport : ICommand
                 name TEXT PRIMARY KEY NOT NULL,
                 full_name TEXT UNIQUE,
                 category TEXT NOT NULL,
-                page INT NULL REFERENCES page(id),
+                page INT NULL REFERENCES page_all(id),
                 match_type TEXT NULL
             );
             
