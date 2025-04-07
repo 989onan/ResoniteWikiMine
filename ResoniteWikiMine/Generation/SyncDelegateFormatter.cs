@@ -264,6 +264,7 @@ public class SyncDelegateFormatter
         public static Dictionary<MethodArgs, Type> argumentLookup = new()
     {
         { new(typeof(IButton), typeof(ButtonEventData)), typeof(ButtonEventHandler) }, // used literally everywhere lol
+        { new(typeof(string), typeof(SyncObject)), typeof(SubsettingGetter) }, // used in settings items
         { new(typeof(bool), new Type[] {typeof(IGrabbable), typeof(Grabber) }), typeof(GrabCheck) }, // Used in Grabbable.UserRootGrabCheck
         //{ new(typeof(bool), new Type[] {} ), typeof(Func<bool>) }, // Used in SlotInspector.IsTargetEmpty
         //{ new(typeof(TextEditor)), typeof(Action<TextEditor>) }, // Used in FieldEditor.EditingFinished, FieldEditor.EditingChanged, FieldEditor.EditingStarted
