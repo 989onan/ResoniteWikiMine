@@ -263,22 +263,24 @@ public class SyncDelegateFormatter
     {
         public static Dictionary<MethodArgs, Type> argumentLookup = new()
     {
-        { new(typeof(IButton), typeof(ButtonEventData)), typeof(ButtonEventHandler) }, // used literally everywhere lol
-        { new(typeof(string), typeof(SyncObject)), typeof(SubsettingGetter) }, // used in settings items
-        { new(typeof(bool), new Type[] {typeof(IGrabbable), typeof(Grabber) }), typeof(GrabCheck) }, // Used in Grabbable.UserRootGrabCheck
-        //{ new(typeof(bool), new Type[] {} ), typeof(Func<bool>) }, // Used in SlotInspector.IsTargetEmpty
-        //{ new(typeof(TextEditor)), typeof(Action<TextEditor>) }, // Used in FieldEditor.EditingFinished, FieldEditor.EditingChanged, FieldEditor.EditingStarted
-        { new(typeof(ITouchable), typeof(TouchEventInfo).MakeByRefType()), typeof(TouchEvent) },
-        { new(typeof(ITouchable), new Type[] {typeof(RelayTouchSource), typeof(float3).MakeByRefType(), typeof(float3).MakeByRefType(), typeof(float3).MakeByRefType(), typeof(bool).MakeByRefType()}), typeof(TouchableGetter) },
+        { new(typeof(IButton), typeof(ButtonEventData)), typeof(ButtonEventHandler) },
+        { new(typeof(bool), new Type[] {typeof(IGrabbable), typeof(Grabber) }), typeof(GrabCheck) },{ new(typeof(ITouchable), typeof(TouchEventInfo).MakeByRefType()), typeof(TouchEvent) },
+        { new(typeof(ITouchable), [typeof(RelayTouchSource), typeof(float3).MakeByRefType(), typeof(float3).MakeByRefType(), typeof(float3).MakeByRefType(), typeof(bool).MakeByRefType()]), typeof(TouchableGetter) },
         { new(typeof(SlotGizmo), typeof(SlotGizmo)), typeof(SlotGizmo.SlotGizmoReplacement) },
+        
+        //{ new(typeof(void), []), typeof(Action) }, // Used in WorldCloseDialog.Close
+        // TODO: classify this one correctly, because if I uncomment this it would overlap with the above delegate
+        //{ new(typeof(void), []), typeof(UpdateDelegate) }, // Used in FinalIK.VRIKAvatar.OnPreSolve, OnPostSolve
         { new(typeof(LegacyWorldItem)), typeof(LegacyWorldItemAction) },
-        //{ new(typeof(void), new Type[] {}), typeof(Action) }, // Used in WorldCloseDialog.Close 
-        // Action<LocomotionController> // used in somewhere?
-
+        { new(typeof(Display), typeof(Slot)), typeof(DesktopDisplayLayout.DisplayItemHandler) },
+        { new(typeof(bool), [typeof(Snapper), typeof(SnapTarget)]), typeof(SnapperFilter) },
+        { new(typeof(DevCreateNewForm), typeof(Slot)), typeof(ItemCreated) }, 
+        { new(typeof(FrooxEngine.UIX.ModalOverlay), [typeof(Slot)]), typeof(ModalOverlayConstructor) },
     };
 
         public static Type ClassifyDelegate(MethodInfo m)
         {
+            // TODO: check if the method has SyncMethod attribute, and if attr.MethodType != typeof(Delegate) return it
             if (argumentLookup.TryGetValue(new(m), out var t))
             {
                 return t;
