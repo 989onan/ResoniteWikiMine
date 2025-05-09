@@ -8,6 +8,7 @@ using FrooxEngine.ProtoFlux;
 using FrooxEngine.UIX;
 using Microsoft.Data.Sqlite;
 using MwParserFromScratch.Nodes;
+using ResoniteWikiMine.Utility;
 
 namespace ResoniteWikiMine.Commands;
 
@@ -139,15 +140,13 @@ public sealed partial class WikiComponentReport : ICommand
         Dictionary<string, string[]> typeNamesInv)
     {
         var candidates = new List<(string, MatchType)>();
-        candidates.Add((componentType.Name, MatchType.Exact));
 
-        foreach (var (candidate, matchType) in candidates.ToArray())
+
+        string? nonGeneric = GetTypeWithoutGenericSuffix(CreateComponentPages.GetNiceName(componentType));
+        candidates.Insert(0, (CreateComponentPages.GetNiceName(componentType), MatchType.Exact));
+        if (nonGeneric != null)
         {
-            string? nonGeneric = GetTypeWithoutGenericSuffix(candidate);
-            if (nonGeneric != null)
-            {
-                candidates.Insert(0, (nonGeneric, matchType == MatchType.Exact ? MatchType.NoGenericSuffix : MatchType.OldName));
-            }
+            candidates.Insert(0, (nonGeneric, MatchType.NoGenericSuffix));
         }
 
         foreach (var (candidate, matchType) in candidates)
@@ -162,13 +161,10 @@ public sealed partial class WikiComponentReport : ICommand
 
         return null;
     }
-
     public static string? GetTypeWithoutGenericSuffix(string name)
     {
-        var match = StripGenericSuffixRegex.Match(name);
-        if (match.Success)
-            return match.Groups[1].Value;
-        return null;
+        int index = name.IndexOf('`');
+        return index == -1 ? null : name.Substring(0, index);
     }
 
     private static void FlattenComponents(

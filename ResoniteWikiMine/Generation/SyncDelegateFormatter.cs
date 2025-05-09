@@ -316,6 +316,8 @@ public class SyncDelegateFormatter
             }
             else
             {
+                p = p.Concat(new[] { m.ReturnType }).ToArray();
+
                 return Expression.GetFuncType(p);
             }
         }

@@ -61,50 +61,43 @@ public sealed class CreateComponentPages : ICommand
                 Console.ResetColor();
                 lastCategory = category;
             }
-
-            var title = componentType.Name;
+            string ComponentTypeName = componentType.Name.Replace("_", " ");
+            var title = componentType.Name.Replace("_", " ");
             var text = "";
-            string? nonGeneric = WikiComponentReport.GetTypeWithoutGenericSuffix(fullName);
+            string? nonGeneric = WikiComponentReport.GetTypeWithoutGenericSuffix(ComponentTypeName);
+
             if (nonGeneric != null)
             {
                 title = nonGeneric;
-                var h = pages.ToList().Find(o => o.title == GetNiceName(componentType));
-                var j = page_content.ToList().Find(o => h.id == o.id);
-                if (j.content != null)
+                var h2 = pages.ToList().Find(o => o.title == $"Component:{ComponentTypeName}");
+                var j2 = page_content.ToList().Find(o => h2.id == o.id);
+                if (j2.content == null || j2.content.Equals(""))
                 {
-                    if (!j.content.Equals(""))
-                    {
-                        continue;
-                    }
+                    title = $"Component:{ComponentTypeName}";
+                    text = $"#REDIRECT[[Component:{nonGeneric}]]";
+                    goto db_insert;
+
                 }
-                db.Execute("INSERT INTO wiki_page_create_queue(title, text) VALUES (@Title, @Text)",
-                    new
-                    {
-                        Title = $"Component:{componentType.Name}",
-                        Text = $"#REDIRECT[[Component:{nonGeneric}]]"
-                    });
-                continue;
+            }
+
+            var h = pages.ToList().Find(o => o.title == $"Component:{title}");
+            var j = page_content.ToList().Find(o => h.id == o.id);
+            if (j.content == null || j.content.Equals(""))
+            {
+                text = GenerateWikitext(componentType);
+                title = $"Component:{title}";
             }
             else
             {
-                text = GenerateWikitext(componentType);
-
-            }
-            if(page != null)
-            {
-                if (!page.Equals(""))
-                {
-                    continue;
-                }
+                continue;
             }
 
-            title = $"Component:{title}";
 
 
-
+        db_insert:
             // God save me.
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write("Component: ");
+            Console.Write("Creating Component page in database: ");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(fullName.PadRight(60));
             Console.ForegroundColor = ConsoleColor.Cyan;
