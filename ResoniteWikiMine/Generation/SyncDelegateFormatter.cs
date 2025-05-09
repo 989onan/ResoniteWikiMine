@@ -283,7 +283,18 @@ public class SyncDelegateFormatter
             {
                 return t;
             }
-            var p = m.GetParameters().Select(para => para.ParameterType).ToArray();
+            var p = m.GetParameters().Select(para => {
+                if (para.ParameterType.IsByRefLike || para.ParameterType.IsByRef)
+                {
+                    return para.ParameterType.GetElementType();
+                }
+                else
+                {
+                    return para.ParameterType;
+                }
+
+
+            }).ToArray();
             if (p.Length == 3 && p[0] == typeof(IButton) && p[1] == typeof(ButtonEventData))
             {
                 return typeof(ButtonEventHandler<>).MakeGenericType(p[2]);
@@ -292,21 +303,19 @@ public class SyncDelegateFormatter
 
         }
 
-        public static Type GetFuncOrAction(MethodInfo m)
-        {
-            var p = m.GetParameters().Select(para => para.ParameterType).ToArray();
-            return GetFuncOrAction(m, p);
-        }
-
         public static Type GetFuncOrAction(MethodInfo m, Type[] p)
         {
             if (m.ReturnType == typeof(void))
             {
+                Type[] j = new Type[p.Length];
+                for (int i = 0; i < p.Length; i++)
+                {
+                    j[i] = p[i];
+                }
                 return Expression.GetActionType(p);
             }
             else
             {
-                p = p.Concat(new[] { m.ReturnType }).ToArray();
                 return Expression.GetFuncType(p);
             }
         }
