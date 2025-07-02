@@ -3,11 +3,13 @@ using System.Text;
 using Dapper;
 using Elements.Core;
 using FrooxEngine;
+using ResoniteWikiMine.MediaWiki;
 
 namespace ResoniteWikiMine.Commands;
 
 public sealed class CreateComponentPages : ICommand
 {
+
     public async Task<int> Run(WorkContext context, string[] args)
     {
         var db = context.DbConnection;
@@ -121,6 +123,7 @@ public sealed class CreateComponentPages : ICommand
         return 0;
     }
 
+
     private static string GenerateWikitext(Type type)
     {
         var name = type.Name;
@@ -164,7 +167,9 @@ public sealed class CreateComponentPages : ICommand
         return categories;
     }
 
-    internal static string GetNiceName(Type type)
+
+
+    public static string GetNiceName(Type type)
     {
         return type.Name.BeautifyName();
     }

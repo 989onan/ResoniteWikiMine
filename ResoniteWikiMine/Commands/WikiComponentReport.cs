@@ -139,26 +139,12 @@ public sealed partial class WikiComponentReport : ICommand
         SqliteConnection db,
         Dictionary<string, string[]> typeNamesInv)
     {
-        var candidates = new List<(string, MatchType)>();
-
-
-        string? nonGeneric = GetTypeWithoutGenericSuffix(CreateComponentPages.GetNiceName(componentType));
-        candidates.Insert(0, (CreateComponentPages.GetNiceName(componentType), MatchType.Exact));
-        if (nonGeneric != null)
-        {
-            candidates.Insert(0, (nonGeneric, MatchType.NoGenericSuffix));
-        }
-
-        foreach (var (candidate, matchType) in candidates)
-        {
-            var sub = candidate.Replace('_', ' ');
-            var match = db.QueryFirstOrDefault<int?>(
-                "SELECT id FROM page WHERE title = @Name OR title = 'Component:' || @Name",
-                new { Name = sub });
-            if (match != null)
-                return (match.Value, matchType);
-        }
-
+        var sub = (GetTypeWithoutGenericSuffix(componentType.Name) ?? componentType.Name).Replace("_"," ");
+        var match = db.QueryFirstOrDefault<int?>(
+            "SELECT id FROM page WHERE title = @Name OR title = 'Component:' || @Name",
+            new { Name = sub });
+        if (match != null)
+            return (match.Value, MatchType.Exact);
         return null;
     }
     public static string? GetTypeWithoutGenericSuffix(string name)
