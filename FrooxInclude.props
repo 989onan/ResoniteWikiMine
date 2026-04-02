@@ -9,47 +9,51 @@
 
     <ItemGroup>
         <Reference Include="Elements.Assets">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\Elements.Assets.dll</HintPath>
+            <HintPath>$(ResonitePath)\Elements.Assets.dll</HintPath>
+        </Reference>
+
+        <Reference Include="Elements.Assets">
+            <HintPath>$(ResonitePath)\Elements.Data.dll</HintPath>
         </Reference>
 
         <Reference Include="Elements.Core">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\Elements.Core.dll</HintPath>
+            <HintPath>$(ResonitePath)\Elements.Core.dll</HintPath>
         </Reference>
 
         <Reference Include="FrooxEngine">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\FrooxEngine.dll</HintPath>
+            <HintPath>$(ResonitePath)\FrooxEngine.dll</HintPath>
         </Reference>
 
         <Reference Include="ProtoFlux.Nodes.Core">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\ProtoFlux.Nodes.Core.dll</HintPath>
+            <HintPath>$(ResonitePath)\ProtoFlux.Nodes.Core.dll</HintPath>
         </Reference>
 
         <Reference Include="ProtoFlux.Nodes.FrooxEngine">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
+            <HintPath>$(ResonitePath)\ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
         </Reference>
 
         <Reference Include="ProtoFluxBindings">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\ProtoFluxBindings.dll</HintPath>
+            <HintPath>$(ResonitePath)\ProtoFluxBindings.dll</HintPath>
         </Reference>
 
         <Reference Include="Rug.Osc">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\Rug.Osc.dll</HintPath>
+            <HintPath>$(ResonitePath)\Rug.Osc.dll</HintPath>
         </Reference>
 
         <Reference Include="SkyFrost.Base">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.dll</HintPath>
+            <HintPath>$(ResonitePath)\SkyFrost.Base.dll</HintPath>
         </Reference>
 
         <Reference Include="SkyFrost.Base.Models">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\SkyFrost.Base.Models.dll</HintPath>
+            <HintPath>$(ResonitePath)\SkyFrost.Base.Models.dll</HintPath>
         </Reference>
 
         <Reference Include="PhotonDust">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\PhotonDust.dll</HintPath>
+            <HintPath>$(ResonitePath)\PhotonDust.dll</HintPath>
         </Reference>
 
         <Reference Include="System.Threading.Tasks.DataFlow">
-            <HintPath>$(ResonitePath)\Resonite_Data\Managed\System.Threading.Tasks.DataFlow.dll</HintPath>
+            <HintPath>$(ResonitePath)\Renderer\Renderite.Renderer_Data\Managed\System.Threading.Tasks.Dataflow.dll</HintPath>
         </Reference>
     </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime;
 using System.Text;
 using Elements.Core;
+using Elements.Data;
 using FrooxEngine;
 using FrooxEngine.Undo;
 using Microsoft.Extensions.Primitives;
